@@ -22,15 +22,36 @@ export * from './runtime/telemetry.js';
 export * from './runtime/offline.js';
 export * from './runtime/i18n.js';
 export * from './runtime/benchmarks.js';
-export * from './cli/index.js';
+export {
+  type ReleaseChannel,
+  type SDKUpdateInfo,
+  type SDKUpgradeOptions,
+  checkForUpdate,
+  performUpgrade,
+  success,
+  error,
+  warn,
+  info,
+  dim,
+  bold,
+  fatal,
+  detectSquadDir,
+  ghAvailable,
+  ghAuthenticated,
+  ghIssueList,
+  ghIssueEdit,
+  runWatch,
+  runUpgrade
+} from './cli/index.js';
 export * from './marketplace/index.js';
 export * from './build/index.js';
 export * from './sharing/index.js';
 
 import { fatal } from './cli/core/errors.js';
 import { BOLD, RESET } from './cli/core/output.js';
+import { runInit } from './cli/core/init.js';
 
-function main(): void {
+async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const cmd = args[0];
 
@@ -73,18 +94,42 @@ function main(): void {
 
   // Route subcommands
   if (!cmd || cmd === 'init') {
-    console.log(`⚠️  'init' is not yet implemented. Coming in PRD 16. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    runInit(process.cwd()).catch(err => {
+      fatal(err.message);
+    });
+    return;
   }
 
   if (cmd === 'upgrade') {
-    console.log(`⚠️  'upgrade' is not yet implemented. Coming in PRD 17. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    const { runUpgrade } = await import('./cli/core/upgrade.js');
+    const { migrateDirectory } = await import('./cli/core/migrate-directory.js');
+    
+    const migrateDir = args.includes('--migrate-directory');
+    const selfUpgrade = args.includes('--self');
+    
+    // Handle --migrate-directory flag
+    if (migrateDir) {
+      await migrateDirectory(process.cwd());
+      // Continue with regular upgrade after migration
+    }
+    
+    // Run upgrade
+    await runUpgrade(process.cwd(), { 
+      migrateDirectory: migrateDir,
+      self: selfUpgrade
+    });
+    
+    process.exit(0);
   }
 
   if (cmd === 'watch') {
-    console.log(`⚠️  'watch' is not yet implemented. Coming in PRD 18. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    const { runWatch } = await import('./cli/commands/watch.js');
+    const intervalIdx = args.indexOf('--interval');
+    const intervalMinutes = (intervalIdx !== -1 && args[intervalIdx + 1])
+      ? parseInt(args[intervalIdx + 1], 10)
+      : 10;
+    await runWatch(process.cwd(), intervalMinutes);
+    return;
   }
 
   if (cmd === 'export') {
