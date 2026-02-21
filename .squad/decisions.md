@@ -64,10 +64,15 @@
 **What:** "squad watch" should be renamed to "squad triage" — user feedback that the command name should reflect active categorization/routing, not passive observation.
 **Why:** User request — captured for team memory.
 
-### 2026-02-21T21:22:47Z: User directive — add `squad ralph` CLI command
+### 2026-02-21T21:35:22Z: User directive — CLI command naming: `squad loop`
 **By:** Brady (via Copilot)
-**What:** Add a `squad ralph` CLI command that invokes Ralph's work monitor loop directly from the command line. Must support `--filter` flag for wave-aware execution (e.g., `squad ralph --filter 'm1'` processes only M1-labeled issues).
-**Why:** User request — captured for team memory. Addresses the gap where Ralph can't enforce wave ordering.
+**What:** The work monitor CLI command should be `squad loop`, not `squad ralph` or `squad monitor`. "Loop" is universally understood — no Squad lore needed. Finalized preference (supersedes Keaton's recommendations in favor of `squad monitor`). Update issue #269 accordingly.
+**Why:** User request — final naming decision. Brady prefers `squad loop` for clarity and universal understanding.
+
+### 2026-02-21T21:35:22Z: User directive — `squad hire` CLI command
+**By:** Brady (via Copilot)
+**What:** Add a `squad hire` CLI command. This is the team creation entry point — the init experience with personality. "squad hire" instead of "squad init".
+**Why:** User request — Brady wants CLI commands that feel natural and match Squad's identity.
 
 ### 2026-02-21: CLI rename — `watch` → `triage` (recommended) (consolidated)
 **By:** Keaton (Lead)
@@ -77,8 +82,9 @@
 **Reference:** Keaton analysis in `.squad/decisions/inbox/keaton-cli-rename.md`
 
 ### 2026-02-21: SDK M0 blocker — upgrade from `file:` to npm reference (resolved)
-**By:** Kujan (SDK Expert)
+**By:** Kujan (SDK Expert), Edie (implementation)
 **What:** Change `optionalDependencies` from `file:../copilot-sdk/nodejs` to `"@github/copilot-sdk": "^0.1.25"`. The SDK is published on npm (28 versions, SLSA attestations). This one-line change unblocks npm publish and removes CI dependency on sibling directory.
 **Why:** The `file:` reference is the only M0 blocker. Squad's SDK surface is minimal (1 runtime import: `CopilotClient`). Keep SDK in `optionalDependencies` to preserve zero-dependency scaffolding guarantee (Rabin decision).
-**Verified:** Build passes (0 errors), all 1592 tests pass with npm reference. No tests require live Copilot CLI server.
-**Reference:** Kujan audit in `.squad/decisions/inbox/kujan-sdk-m0-audit.md`
+**Verified:** Build passes (0 errors), all 1592 tests pass with npm reference. No tests require live Copilot CLI server. PR #271 merged successfully.
+**Reference:** Kujan audit + Edie implementation in `.squad/decisions/inbox/edie-sdk-swap.md`
+**Closes:** #190, #193, #194

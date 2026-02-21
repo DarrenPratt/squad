@@ -17,3 +17,6 @@
 
 ### 📌 Team update (2026-02-21T21:23Z): CLI command renames are pending — decided by Keaton
 Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy; aligns with GitHub terminology). Keep `watch` as silent alias for backward compatibility. Do NOT expose `squad ralph` as user-facing CLI; suggest `squad monitor` or `squad loop` instead for the monitoring function. Ralph remains in team identity, not CLI. Confidence: 85% for triage, 90% against ralph.
+
+### 📌 Team update (2026-02-21T21:35Z): CLI naming finalized — decided by Brady
+**Final directives:** `squad triage` (confirmed), `squad loop` (replaces Keaton's `squad monitor` proposal), `squad hire` (replaces `squad init`). Commands chosen for clarity and identity alignment. Brady's preference supersedes earlier recommendations.
