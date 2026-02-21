@@ -1,55 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Squad SDK — CLI entry point and exports
- * Programmable multi-agent runtime for GitHub Copilot
+ * Squad CLI — standalone entry point for npx distribution.
+ * Bundled by esbuild into cli.js at the package root.
+ * Contains ONLY the CLI; SDK library exports live in dist/index.js.
  */
-
-const VERSION = '0.6.0-alpha.0';
-
-// Export public API
-export * from './config/index.js';
-export * from './agents/onboarding.js';
-export * from './casting/index.js';
-export * from './skills/index.js';
-export { selectResponseTier, getTier } from './coordinator/response-tiers.js';
-export type { ResponseTier, TierName, TierContext, ModelTierSuggestion } from './coordinator/response-tiers.js';
-export { loadConfig, loadConfigSync } from './runtime/config.js';
-export type { ConfigLoadResult, ConfigValidationError } from './runtime/config.js';
-export * from './runtime/streaming.js';
-export * from './runtime/cost-tracker.js';
-export * from './runtime/telemetry.js';
-export * from './runtime/offline.js';
-export * from './runtime/i18n.js';
-export * from './runtime/benchmarks.js';
-export {
-  type ReleaseChannel,
-  type SDKUpdateInfo,
-  type SDKUpgradeOptions,
-  checkForUpdate,
-  performUpgrade,
-  success,
-  error,
-  warn,
-  info,
-  dim,
-  bold,
-  fatal,
-  detectSquadDir,
-  ghAvailable,
-  ghAuthenticated,
-  ghIssueList,
-  ghIssueEdit,
-  runWatch,
-  runUpgrade
-} from './cli/index.js';
-export * from './marketplace/index.js';
-export * from './build/index.js';
-export * from './sharing/index.js';
 
 import { fatal } from './cli/core/errors.js';
 import { BOLD, RESET } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
+
+const VERSION = '0.6.0-alpha.0';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -107,13 +68,10 @@ async function main(): Promise<void> {
     const migrateDir = args.includes('--migrate-directory');
     const selfUpgrade = args.includes('--self');
     
-    // Handle --migrate-directory flag
     if (migrateDir) {
       await migrateDirectory(process.cwd());
-      // Continue with regular upgrade after migration
     }
     
-    // Run upgrade
     await runUpgrade(process.cwd(), { 
       migrateDirectory: migrateDir,
       self: selfUpgrade

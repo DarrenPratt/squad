@@ -6,10 +6,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "squad": "./dist/index.js"
+    "squad": "./cli.js"
   },
   "scripts": {
     "build": "tsc",
+    "build:cli": "tsc && npx esbuild dist/cli-entry.js --bundle --format=esm --platform=node --target=node20 --outfile=cli.js",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",

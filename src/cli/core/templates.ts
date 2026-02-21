@@ -5,6 +5,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
 
 /** Template file descriptor */
 export interface TemplateFile {
@@ -247,12 +248,18 @@ export const TEMPLATE_MANIFEST: TemplateFile[] = [
 
 /**
  * Get the templates directory path.
- * Returns the absolute path to the templates directory in the package.
+ * Walks up from the current file to find templates/ — works both
+ * from compiled dist/cli/core/templates.js and from a bundled cli.js at the root.
  */
 export function getTemplatesDir(): string {
-  // In ESM, __dirname is not available — use import.meta.url
   const currentFile = fileURLToPath(import.meta.url);
-  const currentDir = dirname(currentFile);
-  // From src/cli/core/templates.ts, go up to package root, then into templates/
-  return join(currentDir, '..', '..', '..', 'templates');
+  let dir = dirname(currentFile);
+  for (let i = 0; i < 6; i++) {
+    const candidate = join(dir, 'templates');
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error('Templates directory not found — installation may be corrupted');
 }

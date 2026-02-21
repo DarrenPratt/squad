@@ -8,12 +8,23 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Get package version from package.json
+ * Walks up from the current file to find package.json — works from both
+ * compiled dist/cli/core/version.js and bundled cli.js at the root.
  */
 export function getPackageVersion(): string {
   const currentFile = fileURLToPath(import.meta.url);
-  const pkgPath = path.join(path.dirname(currentFile), '..', '..', '..', 'package.json');
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  return pkg.version;
+  let dir = path.dirname(currentFile);
+  for (let i = 0; i < 6; i++) {
+    const candidate = path.join(dir, 'package.json');
+    if (fs.existsSync(candidate)) {
+      const pkg = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+      return pkg.version;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return '0.0.0';
 }
 
 /**
