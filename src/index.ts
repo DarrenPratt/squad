@@ -42,7 +42,13 @@ export {
   ghIssueList,
   ghIssueEdit,
   runWatch,
-  runUpgrade
+  runUpgrade,
+  runInit,
+  runExport,
+  runImport,
+  runCopilot,
+  type CopilotFlags,
+  scrubEmails
 } from './cli/index.js';
 export * from './marketplace/index.js';
 export * from './build/index.js';
