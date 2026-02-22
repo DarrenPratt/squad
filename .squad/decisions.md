@@ -453,5 +453,133 @@ Medium. Changes error handling contract for all functions that used `fatal()`. B
 **What:** Doc and blog as you go during SquadUI integration work. Doesn't have to be perfect — a proper docs pass comes later — but keep docs updated incrementally.
 **Why:** User request — captured for team memory
 
+### 2026-02-22T035939Z: Repository scope directive
+**By:** Brady (via Copilot)
+**What:** Do NOT change anything in bradygaster/squad repo. This working copy is bradygaster/squad-pr — changes are permitted here. The two repos are distinct.
+**Why:** User request — captured for team memory
+
+### 2026-02-22: SDK/CLI File Split Plan — Definitive Mapping
+**By:** Keaton (Lead)
+**Status:** Decision
+**Scope:** Monorepo restructure — move `src/` into `packages/squad-sdk/` and `packages/squad-cli/`
+
+**Overview:** All 114 `.ts` files in root `src/` must be split between two workspace packages. The dependency direction is **one-way: CLI → SDK**. No SDK module imports from CLI. This is clean and the split is mechanical.
+
+**SDK Package (`packages/squad-sdk/src/`):**
+- **Directories:** adapter, agents, build, casting, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools, utils (15 total)
+- **Standalone files:** index.ts, resolution.ts, parsers.ts, types.ts
+- **Exports:** Expanded to 18 subpath exports matching directory structure
+- **Dependencies:** `@github/copilot-sdk` only (zero UI deps)
+
+**CLI Package (`packages/squad-cli/src/`):**
+- **Directories:** cli/ (all CLI submodules: core/, commands/, shell/, components/)
+- **Standalone files:** cli-entry.ts (becomes `bin.squad` target)
+- **Dependencies:** `@bradygaster/squad-sdk`, ink, react, esbuild
+
+**Root Package:**
+- **Role:** Workspace orchestrator only (not publishable)
+- **Preserved:** `package.json` (workspace def), tsconfig.json (base config), vitest.config.ts, test/, test-fixtures/, templates/, docs/, .squad/
+- **Removed:** main, types, bin, runtime dependencies
+
+**Key Call — SDK Barrel Cleanup:** Remove CLI utilities (`success`, `error`, `warn`, `fatal`, etc.) from SDK exports. CLI re-exports in `src/index.ts` were a mistake — those are CLI implementation details, not SDK API. This is a breaking change that's correct and intentional.
+
+**Import Rewriting Rules:**
+- CLI → SDK relative imports become package imports (`from '../config/'` → `from '@bradygaster/squad-sdk/config'`)
+- Intra-SDK and intra-CLI imports stay relative (unchanged)
+- No circular dependencies verified (clean DAG)
+
+**Migration Order:**
+1. **Phase 1 (SDK first):** Copy 15 dirs + 4 files, update exports, build in isolation
+2. **Phase 2 (CLI second):** Copy cli/ + cli-entry.ts, rewrite imports to SDK packages, build against SDK
+3. **Phase 3 (root cleanup):** Delete root src/, update test imports, finalize structure
+
+**Templates:** Copy into CLI package (Option A — self-contained packages).
+
+**Why:** One-way dependency graphs enable independent package evolution. SDK stays pure library; CLI stays thin consumer. Future features only touch the relevant package.
+
+### 2026-02-22: Version Alignment — 0.7.0 stubs → 0.8.0 real packages
+**By:** Kobayashi (Git & Release)
+**Status:** APPROVED & EXECUTED
+
+**Context:**
+- **0.7.0 npm stubs:** Placeholder packages published on npmjs.com (no real code)
+- **Goal:** Publish real, working code under new version
+
+**Decision: Bump to 0.8.0**
+- **Rationale:** Clear break from stubs (0.7.0 is placeholder; 0.8.0 is functional code). Pre-1.0 signal appropriate for alpha software.
+
+**Changes Executed:**
+1. SDK `package.json`: version `0.7.0` → `0.8.0`
+2. CLI `package.json`: version `0.7.0` → `0.8.0`, SDK dependency locked to `@bradygaster/squad-sdk@0.8.0`
+3. SDK `src/index.ts`: `VERSION` export `0.7.0` → `0.8.0`
+4. Root `package.json`: added `"private": true` (prevent accidental npm publish of workspace coordinator)
+
+**Verification:** ✅ All version strings aligned, CLI dependency on SDK pinned, root marked private.
+
+### 2026-02-22: Defer test import migration until root src/ removal
+**By:** Hockney (Tester)
+**Status:** Proposed
+
+**Context:** After SDK/CLI workspace split, all 56 test files still import from root `../src/`. Build and all 1719 tests pass cleanly because root `src/` still exists.
+
+**Decision:** Defer migrating test imports from `../src/` to `@bradygaster/squad-sdk` / `@bradygaster/squad-cli` until root `src/` is actually removed.
+
+**Rationale:**
+1. **Exports map gap:** SDK exposes 18 subpath exports; tests import ~40+ distinct deep internal paths not in exports map
+2. **CLI no exports:** cli/shell/ tests have no package-level export path to migrate to
+3. **Barrel divergence:** Root `src/index.ts` still exports CLI functions SDK package correctly does not
+4. **Risk/reward:** 150+ import lines for zero functional benefit while root `src/` exists is pure risk
+
+**When to revisit:** When root `src/` is deleted (blocker at that point). Options: expand exports maps, add vitest resolve.alias, or move tests into workspace packages.
+
+### 2026-02-22: Build System Migration — tsconfig + package.json
+**By:** Edie (TypeScript Engineer)
+**Status:** Decision
+**Scope:** Monorepo build configuration for SDK/CLI workspace packages
+
+**What Changed:**
+1. **Root tsconfig.json:** Base config only, shared compiler options, `files: []` (compiles nothing), project references to both packages
+2. **SDK tsconfig.json:** Extends root, `composite: true`, declarations + maps, no JSX
+3. **CLI tsconfig.json:** Extends root, `composite: true`, `jsx: "react-jsx"`, references SDK package
+4. **Root package.json:** `private: true`, workspace orchestrator, stripped main/types/bin/runtime deps
+5. **SDK package.json:** 18 subpath exports, `@github/copilot-sdk` as direct dependency
+6. **CLI package.json:** `bin.squad` → `./dist/cli-entry.js`, ink/react runtime deps, templates in files array
+
+**Why `composite: true`:** TypeScript project references require this. Without it, cross-package type information fails to resolve.
+
+**Build Order:** `npm run build --workspaces` builds SDK first (no deps), then CLI (depends on SDK). npm respects topological order automatically.
+
+**Verified:** Both packages compile with zero errors. All dist artifacts (`.js`, `.d.ts`, `.d.ts.map`) emitted correctly.
+
+### 2026-02-22: Subpath exports in @bradygaster/squad-sdk
+**By:** Edie (TypeScript Engineer)
+**Issue:** #227
+
+**What:** `packages/squad-sdk/package.json` declares 18 subpath exports (`.`, `./parsers`, `./types`, and 15 module paths). Each uses types-first condition ordering.
+
+**Why:** Enables tree-shaking and focused imports. Consumers can `import { … } from '@bradygaster/squad-sdk/config'` instead of pulling the entire barrel. Type-only consumers can import from `./types` with zero runtime cost.
+
+**Constraints:**
+- Every subpath must have a corresponding source barrel (`src/<path>.ts` or `src/<path>/index.ts`)
+- `"types"` condition must appear before `"import"` — Node.js evaluates top-to-bottom
+- ESM-only: no `"require"` condition per team decision
+- Adding a new subpath requires both source barrel and exports entry; removing one without the other breaks resolution
+
+### 2026-02-22: Barrel file conventions for parsers and types
+**By:** Kujan (SDK Expert)
+**Issues:** #225, #226 (Epic #181)
+
+**What:**
+- `src/parsers.ts` re-exports all parser functions AND their types using `export { ... } from` and `export type { ... } from`
+- `src/types.ts` re-exports ONLY types using `export type { ... } from` exclusively — guaranteed zero runtime imports
+- Both follow the existing ESM barrel pattern from `src/index.ts`
+
+**Why:**
+1. **Consumer convenience:** SquadUI and others can import parsers or types from a single module instead of reaching into internal paths
+2. **Separation of concerns:** `types.ts` is safe for type-only contexts (declaration files). `parsers.ts` includes runtime functions for consumers that need them
+3. **No existing modifications:** Both are additive-only new files — zero risk to existing behavior
+
+**Impact:** Low. Two new files, no changes to existing source. Build passes, all 1683 tests pass.
+
 
 

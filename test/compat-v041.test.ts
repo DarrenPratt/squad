@@ -14,10 +14,10 @@ import {
   parseRoutingMarkdown,
   matchIssueLabels,
   type CompiledRouter,
-} from '../src/config/routing.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Casting ---
-import { CastingEngine, type CastMember } from '../src/casting/casting-engine.js';
+import { CastingEngine, type CastMember } from '@bradygaster/squad-sdk/casting';
 
 // --- Config ---
 import {
@@ -26,10 +26,10 @@ import {
   validateConfigDetailed,
   loadConfigSync,
   type SquadConfig,
-} from '../src/runtime/config.js';
+} from '@bradygaster/squad-sdk/runtime';
 
 // --- Tools ---
-import { ToolRegistry } from '../src/tools/index.js';
+import { ToolRegistry } from '@bradygaster/squad-sdk/tools';
 
 // --- Hooks ---
 import {
@@ -37,10 +37,10 @@ import {
   ReviewerLockoutHook,
   DEFAULT_BLOCKED_COMMANDS,
   type PreToolUseContext,
-} from '../src/hooks/index.js';
+} from '@bradygaster/squad-sdk/hooks';
 
 // --- Event Bus ---
-import { EventBus, type SquadEvent, type SquadEventType } from '../src/runtime/event-bus.js';
+import { EventBus, type SquadEvent, type SquadEventType } from '@bradygaster/squad-sdk/runtime/event-bus';
 
 // --- Models ---
 import {
@@ -50,19 +50,19 @@ import {
   getModelInfo,
   getFallbackChain,
   isModelAvailable,
-} from '../src/config/models.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Skills ---
-import { SkillRegistry, parseFrontmatter, parseSkillFile } from '../src/skills/index.js';
+import { SkillRegistry, parseFrontmatter, parseSkillFile } from '@bradygaster/squad-sdk/skills';
 
 // --- Streaming ---
-import { StreamingPipeline, type UsageEvent } from '../src/runtime/streaming.js';
+import { StreamingPipeline, type UsageEvent } from '@bradygaster/squad-sdk/runtime/streaming';
 
 // --- Agent doc ---
-import { parseAgentDoc } from '../src/config/agent-doc.js';
+import { parseAgentDoc } from '@bradygaster/squad-sdk/config';
 
 // --- Migration ---
-import { MigrationRegistry, compareSemVer, parseSemVer } from '../src/config/migration.js';
+import { MigrationRegistry, compareSemVer, parseSemVer } from '@bradygaster/squad-sdk/config';
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';

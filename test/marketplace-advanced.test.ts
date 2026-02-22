@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { SquadConfig } from '../src/config/schema.js';
-import type { MarketplaceManifest } from '../src/marketplace/index.js';
-import { ManifestCategory } from '../src/marketplace/index.js';
+import type { SquadConfig } from '@bradygaster/squad-sdk/config';
+import type { MarketplaceManifest } from '@bradygaster/squad-sdk/marketplace';
+import { ManifestCategory } from '@bradygaster/squad-sdk/marketplace';
 import {
   searchMarketplace,
   validateEntry,
@@ -14,21 +14,21 @@ import {
   type MarketplaceEntry,
   type MarketplaceIndex,
   type MarketplaceSearchQuery,
-} from '../src/marketplace/schema.js';
+} from '@bradygaster/squad-sdk/marketplace';
 import {
   MarketplaceBrowser,
   formatEntryList,
   formatEntryDetails,
   type MarketplaceFetcher,
-} from '../src/marketplace/browser.js';
-import { MarketplaceBackend } from '../src/marketplace/backend.js';
+} from '@bradygaster/squad-sdk/marketplace';
+import { MarketplaceBackend } from '@bradygaster/squad-sdk/marketplace';
 import {
   validateRemoteAgent,
   quarantineAgent,
   generateSecurityReport,
   SECURITY_RULES,
   type RemoteAgentDefinition,
-} from '../src/marketplace/security.js';
+} from '@bradygaster/squad-sdk/marketplace';
 
 // --- Helpers ---
 

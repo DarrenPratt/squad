@@ -10,24 +10,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   SquadCoordinator,
   type CoordinatorResult,
-} from '../src/coordinator/coordinator.js';
+} from '@bradygaster/squad-sdk/coordinator';
 import {
   DirectResponseHandler,
   type CoordinatorContext,
-} from '../src/coordinator/direct-response.js';
+} from '@bradygaster/squad-sdk/coordinator';
 import {
   selectResponseTier,
   getTier,
   type TierName,
-} from '../src/coordinator/response-tiers.js';
+} from '@bradygaster/squad-sdk/coordinator';
 import {
   compileRoutingRules,
   matchRoute,
   parseRoutingMarkdown,
-} from '../src/config/routing.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Casting ---
-import { CastingEngine, type CastingConfig, type AgentRole } from '../src/casting/casting-engine.js';
+import { CastingEngine, type CastingConfig, type AgentRole } from '@bradygaster/squad-sdk/casting';
 
 // --- Skills ---
 import {
@@ -35,14 +35,14 @@ import {
   parseSkillFile,
   parseFrontmatter,
   type SkillDefinition,
-} from '../src/skills/index.js';
+} from '@bradygaster/squad-sdk/skills';
 
 // --- Streaming ---
 import {
   StreamingPipeline,
   type StreamDelta,
   type UsageEvent,
-} from '../src/runtime/streaming.js';
+} from '@bradygaster/squad-sdk/runtime/streaming';
 
 // --- Config ---
 import {
@@ -50,16 +50,16 @@ import {
   validateConfig,
   validateConfigDetailed,
   type SquadConfig,
-} from '../src/runtime/config.js';
+} from '@bradygaster/squad-sdk/runtime';
 import {
   defineConfig,
   validateConfig as validateSchemaConfig,
-} from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   MigrationRegistry,
   parseSemVer,
   compareSemVer,
-} from '../src/config/migration.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Legacy fallback ---
 import {
@@ -67,7 +67,7 @@ import {
   loadLegacyAgentMd,
   mergeLegacyWithConfig,
   type LegacyConfig,
-} from '../src/config/legacy-fallback.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Models ---
 import {
@@ -76,24 +76,24 @@ import {
   inferTierFromModel,
   isTierFallbackAllowed,
   type ResolvedModel,
-} from '../src/agents/model-selector.js';
+} from '@bradygaster/squad-sdk/agents';
 import {
   ModelRegistry,
   MODEL_CATALOG,
   DEFAULT_FALLBACK_CHAINS,
-} from '../src/config/models.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Event bus ---
-import { EventBus } from '../src/runtime/event-bus.js';
+import { EventBus } from '@bradygaster/squad-sdk/runtime/event-bus';
 
 // --- Hooks ---
-import { HookPipeline, type PolicyConfig } from '../src/hooks/index.js';
+import { HookPipeline, type PolicyConfig } from '@bradygaster/squad-sdk/hooks';
 
 // --- Tools ---
-import { ToolRegistry } from '../src/tools/index.js';
+import { ToolRegistry } from '@bradygaster/squad-sdk/tools';
 
 // --- Agents ---
-import { parseAgentDoc } from '../src/config/agent-doc.js';
+import { parseAgentDoc } from '@bradygaster/squad-sdk/config';
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';

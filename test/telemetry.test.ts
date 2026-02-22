@@ -9,8 +9,8 @@ import {
   TelemetryCollector,
   shouldNotifyUpdate,
   setTelemetryTransport,
-} from '../src/runtime/telemetry.js';
-import type { TelemetryEvent, TelemetryConfig } from '../src/runtime/telemetry.js';
+} from '@bradygaster/squad-sdk/runtime/telemetry';
+import type { TelemetryEvent, TelemetryConfig } from '@bradygaster/squad-sdk/runtime/telemetry';
 
 // ============================================================================
 // TelemetryCollector — consent

@@ -6,8 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { EventBus as ClientEventBus } from '../src/client/event-bus.js';
-import { EventBus as RuntimeEventBus } from '../src/runtime/event-bus.js';
+import { EventBus as ClientEventBus } from '@bradygaster/squad-sdk/client';
+import { EventBus as RuntimeEventBus } from '@bradygaster/squad-sdk/runtime/event-bus';
 
 describe('ClientEventBus', () => {
   let bus: ClientEventBus;

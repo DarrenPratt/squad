@@ -12,21 +12,21 @@ import {
   AgentRegistry,
   parseCharterMetadata,
   type AgentDefinition,
-} from '../src/config/agent-source.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   compileCharter,
   compileCharterFull,
   parseCharterMarkdown,
   type CharterCompileOptions,
   type CharterConfigOverrides,
-} from '../src/agents/charter-compiler.js';
-import { resolveModel } from '../src/agents/model-selector.js';
-import { HookPipeline } from '../src/hooks/index.js';
-import { ToolRegistry } from '../src/tools/index.js';
+} from '@bradygaster/squad-sdk/agents';
+import { resolveModel } from '@bradygaster/squad-sdk/agents';
+import { HookPipeline } from '@bradygaster/squad-sdk/hooks';
+import { ToolRegistry } from '@bradygaster/squad-sdk/tools';
 import {
   defineConfig,
   validateConfig as validateSchemaConfig,
-} from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   validateConfig as validateRuntimeConfig,
   validateConfigDetailed,
@@ -34,16 +34,16 @@ import {
   discoverConfigFile,
   DEFAULT_CONFIG as RUNTIME_DEFAULT,
   ConfigValidationError,
-} from '../src/runtime/config.js';
+} from '@bradygaster/squad-sdk/runtime';
 import {
   ModelRegistry,
   MODEL_CATALOG,
-} from '../src/config/models.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   parseRoutingMarkdown,
   compileRoutingRules,
   matchRoute,
-} from '../src/config/routing.js';
+} from '@bradygaster/squad-sdk/config';
 
 // ---------------------------------------------------------------------------
 // Shared fixture helpers

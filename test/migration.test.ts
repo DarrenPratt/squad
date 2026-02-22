@@ -4,7 +4,7 @@ import {
   parseSemVer,
   compareSemVer,
   type Migration,
-} from '../src/config/migration.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   parseTeamMarkdown,
   parseRoutingRulesMarkdown,
@@ -12,7 +12,7 @@ import {
   migrateMarkdownToConfig,
   generateConfigFromParsed,
   type MarkdownParseResult,
-} from '../src/config/markdown-migration.js';
+} from '@bradygaster/squad-sdk/config';
 
 // ============================================================================
 // Migration Registry

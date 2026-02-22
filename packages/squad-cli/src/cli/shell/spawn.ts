@@ -4,7 +4,7 @@
  * Full SDK session integration is stubbed pending CopilotClient session API wiring.
  */
 
-import { resolveSquad } from '../../resolution.js';
+import { resolveSquad } from '@bradygaster/squad-sdk/resolution';
 import { SessionRegistry } from './sessions.js';
 import type { AgentSession } from './types.js';
 import { readFileSync } from 'node:fs';

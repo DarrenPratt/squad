@@ -10,7 +10,7 @@ import {
   type BenchmarkResult,
   type BenchmarkReport,
   type TimingResult,
-} from '../src/runtime/benchmarks.js';
+} from '@bradygaster/squad-sdk/runtime/benchmarks';
 
 // ============================================================================
 // percentile helper

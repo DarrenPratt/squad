@@ -26,3 +26,17 @@
 - **Key decisions needed:** ink vs. alternatives, session-per-agent vs. pooling, background cleanup strategy
 - **File paths:** docs/proposals/squad-interactive-shell.md (proposal), GitHub issue #232 (epic tracking)
 - **Pattern:** When product direction shifts, invalidate existing wave structure and rebuild from foundation
+
+### 2026-02-21: SDK/CLI Split Architecture Decision
+- **Problem:** All 114 .ts files live in root `src/`. Workspace packages `squad-sdk` and `squad-cli` are published stubs. Need to move real code into them.
+- **Analysis:** Dependency flow is strictly CLI → SDK → @github/copilot-sdk. No circular deps. No SDK module imports from CLI. Clean DAG.
+- **Architecture decision:** SDK gets 15 directories + 4 standalone files (adapter, agents, build, casting, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools, utils, index.ts, resolution.ts, parsers.ts, types.ts). CLI gets `src/cli/` + `src/cli-entry.ts`. Root becomes workspace orchestrator only.
+- **Key call:** Remove CLI utility re-exports (`success`, `error`, `fatal`, `runInit`, etc.) from SDK barrel. These leaked CLI implementation into the library surface. Breaking change — correct and intentional.
+- **Key call:** `ink` and `react` are CLI-only deps. SDK has zero UI dependencies.
+- **Migration order:** SDK first (CLI depends on it), CLI second (rewrite imports to package names), root cleanup third.
+- **Exports map:** SDK subpath exports expand from 7 to 18 entries — every module independently importable.
+- **File path:** `.squad/decisions/inbox/keaton-sdk-cli-split-plan.md`
+- **Pattern:** One-way dependency graphs enable independent package evolution. SDK stays pure library; CLI stays thin consumer.
+
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split plan executed, versions aligned to 0.8.0, 1719 tests passing
+Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → SDK → @github/copilot-sdk). Fenster migrated 154 files across both packages. Edie fixed all 6 config files (tsconfigs with composite builds, package.json exports maps). Kobayashi aligned all versions to 0.8.0 (clear break from 0.7.0 stubs). Hockney verified build clean + all 1719 tests pass, deferred test import migration until root src/ removal. Rabin verified publish workflows ready. Coordinator published both packages to npm (0.8.0). Inbox merged to decisions.md. Ready for Phase 3 (root cleanup).

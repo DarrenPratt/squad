@@ -1,40 +1,23 @@
 {
   "name": "@bradygaster/squad",
   "version": "0.6.0-alpha.0",
+  "private": true,
   "description": "Squad — Programmable multi-agent runtime for GitHub Copilot, built on @github/copilot-sdk",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "squad": "./cli.js"
-  },
   "scripts": {
-    "build": "tsc && npm run build --workspaces --if-present",
-    "build:cli": "tsc && npx esbuild dist/cli-entry.js --bundle --format=esm --platform=node --target=node20 --outfile=cli.js",
-    "dev": "tsc --watch",
+    "build": "npm run build -w packages/squad-sdk && npm run build -w packages/squad-cli",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit",
-    "changeset:check": "changeset status"
+    "lint": "tsc --noEmit -p packages/squad-sdk/tsconfig.json && tsc --noEmit -p packages/squad-cli/tsconfig.json"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {
-    "ink": "^6.8.0",
-    "react": "^19.2.4"
-  },
-  "optionalDependencies": {
-    "@github/copilot-sdk": "^0.1.25"
-  },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.2.14",
-    "esbuild": "^0.25.0",
-    "ink-testing-library": "^4.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },

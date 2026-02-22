@@ -53,6 +53,14 @@ export {
   type ParsedHistory,
 } from './history-shadow.js';
 
+// --- M2-10 Agent Onboarding ---
+export {
+  onboardAgent,
+  addAgentToConfig,
+  type OnboardOptions,
+  type OnboardResult,
+} from './onboarding.js';
+
 // --- Charter Types ---
 
 export interface AgentCharter {

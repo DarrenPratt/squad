@@ -13,11 +13,11 @@ import path from 'node:path';
 import { fatal, SquadError } from './cli/core/errors.js';
 import { BOLD, RESET, DIM, RED } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
-import { resolveSquad, resolveGlobalSquadPath } from './resolution.js';
+import { resolveSquad, resolveGlobalSquadPath } from '@bradygaster/squad-sdk';
 import { runShell } from './cli/shell/index.js';
 
 // Keep VERSION in index.ts (public API); import it here via re-export
-import { VERSION } from './index.js';
+import { VERSION } from '@bradygaster/squad-sdk';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);

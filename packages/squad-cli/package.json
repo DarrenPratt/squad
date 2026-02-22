@@ -1,23 +1,101 @@
 {
   "name": "@bradygaster/squad-cli",
-  "version": "0.7.0",
+  "version": "0.8.1",
   "description": "Squad CLI — Command-line interface for the Squad multi-agent runtime",
   "type": "module",
   "bin": {
-    "squad": "./dist/cli.js"
+    "squad": "./dist/cli-entry.js",
+    "squad-cli": "./dist/cli-entry.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
+    "./upgrade": {
+      "types": "./dist/cli/upgrade.d.ts",
+      "import": "./dist/cli/upgrade.js"
+    },
+    "./copilot-install": {
+      "types": "./dist/cli/copilot-install.d.ts",
+      "import": "./dist/cli/copilot-install.js"
+    },
+    "./shell/sessions": {
+      "types": "./dist/cli/shell/sessions.d.ts",
+      "import": "./dist/cli/shell/sessions.js"
+    },
+    "./shell/spawn": {
+      "types": "./dist/cli/shell/spawn.d.ts",
+      "import": "./dist/cli/shell/spawn.js"
+    },
+    "./shell/coordinator": {
+      "types": "./dist/cli/shell/coordinator.d.ts",
+      "import": "./dist/cli/shell/coordinator.js"
+    },
+    "./shell/lifecycle": {
+      "types": "./dist/cli/shell/lifecycle.d.ts",
+      "import": "./dist/cli/shell/lifecycle.js"
+    },
+    "./shell/stream-bridge": {
+      "types": "./dist/cli/shell/stream-bridge.d.ts",
+      "import": "./dist/cli/shell/stream-bridge.js"
+    },
+    "./shell/render": {
+      "types": "./dist/cli/shell/render.d.ts",
+      "import": "./dist/cli/shell/render.js"
+    },
+    "./shell/types": {
+      "types": "./dist/cli/shell/types.d.ts",
+      "import": "./dist/cli/shell/types.js"
+    },
+    "./core/init": {
+      "types": "./dist/cli/core/init.d.ts",
+      "import": "./dist/cli/core/init.js"
+    },
+    "./core/email-scrub": {
+      "types": "./dist/cli/core/email-scrub.d.ts",
+      "import": "./dist/cli/core/email-scrub.js"
+    },
+    "./core/upgrade": {
+      "types": "./dist/cli/core/upgrade.d.ts",
+      "import": "./dist/cli/core/upgrade.js"
+    },
+    "./core/version": {
+      "types": "./dist/cli/core/version.d.ts",
+      "import": "./dist/cli/core/version.js"
+    },
+    "./commands/export": {
+      "types": "./dist/cli/commands/export.d.ts",
+      "import": "./dist/cli/commands/export.js"
+    },
+    "./commands/import": {
+      "types": "./dist/cli/commands/import.d.ts",
+      "import": "./dist/cli/commands/import.js"
+    }
   },
   "files": [
     "dist",
+    "templates",
     "README.md"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@bradygaster/squad-sdk": "0.7.0"
+    "@bradygaster/squad-sdk": "*",
+    "ink": "^6.8.0",
+    "react": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.14",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "ink-testing-library": "^4.0.0"
   },
   "keywords": [
     "copilot",

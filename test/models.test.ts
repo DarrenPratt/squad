@@ -10,7 +10,7 @@ import {
   getModelInfo,
   getFallbackChain,
   isModelAvailable
-} from '../src/config/models.js';
+} from '@bradygaster/squad-sdk/config';
 
 describe('MODEL_CATALOG', () => {
   it('contains all model tiers', () => {

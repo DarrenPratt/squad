@@ -8,7 +8,7 @@
  * @module cli/upgrade
  */
 
-import { MigrationRegistry } from '../config/migration.js';
+import { MigrationRegistry } from '@bradygaster/squad-sdk/config';
 
 // ============================================================================
 // Types

@@ -12,7 +12,7 @@ import {
   clearVersionStore,
   type VersionPin,
   type AgentVersionResolver,
-} from '../src/sharing/versioning.js';
+} from '@bradygaster/squad-sdk/sharing';
 import {
   configureAgentRepo,
   listRepoAgents,
@@ -20,14 +20,14 @@ import {
   pushAgent,
   type AgentRepoConfig,
   type AgentRepoOperations,
-} from '../src/sharing/agent-repo.js';
+} from '@bradygaster/squad-sdk/sharing';
 import {
   AgentCache,
   DEFAULT_AGENT_TTL,
   DEFAULT_SKILL_TTL,
   type CacheEntry,
   type CacheStats,
-} from '../src/sharing/cache.js';
+} from '@bradygaster/squad-sdk/sharing';
 import {
   detectConflicts,
   resolveConflicts,
@@ -35,9 +35,9 @@ import {
   type IncomingBundle,
   type Conflict,
   type ConflictStrategy,
-} from '../src/sharing/conflicts.js';
-import type { AgentDefinition } from '../src/config/agent-source.js';
-import type { SquadConfig } from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/sharing';
+import type { AgentDefinition } from '@bradygaster/squad-sdk/config';
+import type { SquadConfig } from '@bradygaster/squad-sdk/config';
 
 // ===== Helpers =====
 

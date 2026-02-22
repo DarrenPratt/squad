@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SquadClient, type SquadClientOptions } from '../src/adapter/client.js';
+import { SquadClient, type SquadClientOptions } from '@bradygaster/squad-sdk/client';
 import { CopilotClient } from '@github/copilot-sdk';
 
 // Mock CopilotClient

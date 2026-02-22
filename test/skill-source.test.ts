@@ -12,8 +12,8 @@ import {
   SkillSourceRegistry,
   type SkillSource,
   type SkillManifest,
-} from '../src/skills/skill-source.js';
-import type { GitHubFetcher } from '../src/config/agent-source.js';
+} from '@bradygaster/squad-sdk/skills';
+import type { GitHubFetcher } from '@bradygaster/squad-sdk/config';
 
 // --- Helpers ---
 

@@ -42,3 +42,17 @@
 - Build passes (root + workspaces), all 1621 tests pass
 - **Does NOT push to insider.** PR only — coordinator handles insider branch push after merge.
 - **Package structure:** ESM-only, strict mode, Node >=20. squad-cli depends on squad-sdk via version string (npm workspace protocol, per Edie's decision).
+
+### 2026-02-21: Version Alignment — 0.7.0 stubs → 0.8.0 real code
+**Status:** EXECUTED
+- **Decision:** Bump both packages from 0.7.0 (npm stubs) to 0.8.0 (real, publishable code)
+- **Rationale:** Clear break from placeholders. 0.8.0 signals functional code arrival while preserving pre-1.0 alpha status.
+- **Changes:**
+  - `packages/squad-sdk/package.json` → version `0.8.0`, VERSION export updated in `src/index.ts`
+  - `packages/squad-cli/package.json` → version `0.8.0`, dependency on sdk locked to `0.8.0`
+  - `package.json` (root) → added `"private": true` (safety guard against accidental publish)
+- **Verification:** All three version strings aligned. CLI SDK dependency pinned. Pre-existing TS build errors unrelated to alignment.
+- **Next:** Changeset + npm publish (when TS issues resolved). Decision document: `.squad/decisions/inbox/kobayashi-version-alignment.md`
+
+### 📌 Team update (2026-02-22T041800Z): Version alignment complete, both packages published to npm at 0.8.0 — decided by Kobayashi, Coordinator
+Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSION export, root private flag). Coordinator published @bradygaster/squad-sdk@0.8.0 and @bradygaster/squad-cli@0.8.0 to npm registry. Version bump signals clear break from 0.7.0 stubs. Release infrastructure production-ready. Both packages live and resolvable on npm.

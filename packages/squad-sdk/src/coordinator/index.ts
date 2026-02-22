@@ -32,6 +32,15 @@ export {
   type FanOutDependencies,
 } from './fan-out.js';
 
+// --- M3-4 Response Tiers ---
+export {
+  selectResponseTier,
+  getTier,
+  type TierName,
+  type TierContext,
+  type ModelTierSuggestion,
+} from './response-tiers.js';
+
 // --- Legacy types (kept for backwards compat) ---
 
 import type { SquadClient, SquadSessionConfig } from '../client/index.js';

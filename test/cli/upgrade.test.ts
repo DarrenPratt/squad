@@ -8,9 +8,9 @@ import { mkdir, rm, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { runInit } from '../../src/cli/core/init.js';
-import { runUpgrade } from '../../src/cli/core/upgrade.js';
-import { getPackageVersion } from '../../src/cli/core/version.js';
+import { runInit } from '@bradygaster/squad-cli/core/init';
+import { runUpgrade } from '@bradygaster/squad-cli/core/upgrade';
+import { getPackageVersion } from '@bradygaster/squad-cli/core/version';
 
 const TEST_ROOT = join(process.cwd(), `.test-cli-upgrade-${randomBytes(4).toString('hex')}`);
 

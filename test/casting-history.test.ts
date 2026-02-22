@@ -7,12 +7,12 @@ import {
   CastingHistory,
   type CastingRecord,
   type SerializedCastingHistory,
-} from '../src/casting/casting-history.js';
+} from '@bradygaster/squad-sdk/casting';
 import {
   CastingEngine,
   type CastMember,
   type CastingConfig,
-} from '../src/casting/casting-engine.js';
+} from '@bradygaster/squad-sdk/casting';
 
 // --- helpers ---
 

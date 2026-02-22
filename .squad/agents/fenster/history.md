@@ -37,9 +37,16 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 - All changes in `src/index.ts` only — no modifications to resolution.ts, init.ts, or upgrade.ts needed
 - PR on branch `squad/212-213-global-flag-status` → `bradygaster/dev`
 
-### 📌 Team update (2026-02-21T22:25Z): Decision inbox merged — decided by Fenster, Hockney
-- ensureSquadPath() guard (#273): validation function for .squad/ paths, testable composition pattern for routing logic
-- CLI integration tests: direct logic testing instead of process spawning (sets pattern for future CLI tests)
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split executed, versions aligned to 0.8.0, 1719 tests passing — decided by Keaton, Fenster, Edie, Kobayashi, Hockney, Rabin, Coordinator
+- **Phase 1 (SDK):** Migrated 15 directories + 4 standalone files from root `src/` into `packages/squad-sdk/src/`. Cleaned SDK barrel (removed CLI re-exports block). Updated exports map from 7 to 18 subpath entries.
+- **Phase 2 (CLI):** Migrated `src/cli/` + `src/cli-entry.ts` to `packages/squad-cli/src/`. Copied `templates/` into CLI package. Rewrote 6 cross-package imports to use `@bradygaster/squad-sdk/*` package names.
+- **Configuration:** All 6 config files fixed (root tsconfig with project refs, SDK/CLI tconfigs with composite builds, package.json exports maps). Root marked private (prevents accidental npm publish).
+- **Versions:** All strings aligned to 0.8.0 — clear break from 0.7.0 stubs. CLI dependency on SDK pinned to `0.8.0`.
+- **Testing:** Build clean (0 errors), all 1719 tests passing. Test import migration deferred until root `src/` deletion (lazy migration reduces risk).
+- **Distribution:** Both packages published to npm (@bradygaster/squad-sdk@0.8.0, @bradygaster/squad-cli@0.8.0). Publish workflows verified ready.
+- **Dependency graph verified:** Clean DAG (CLI → SDK → @github/copilot-sdk, no cycles). SDK pure library (zero UI deps). CLI thin consumer (owns ink, react).
+- **Next phase:** Phase 3 (root cleanup) — delete root src/, update test imports when blocking.
+
 
 ### 📌 #234/#235: Shell module structure + main entry wiring — implemented
 - Created `src/cli/shell/` module: `index.ts` (placeholder `runShell()`), `types.ts` (ShellState, ShellMessage, AgentSession), `components/.gitkeep`
@@ -90,3 +97,26 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 
 ### 📌 Team update (2026-02-22T020714Z): CRLF normalization complete and merged
 Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry points across 6 files. Pattern established: normalize at parser entry, not at file-read callsite. This ensures cross-platform line ending safety for all parsers (Windows CRLF, Unix LF, old Mac CR). Decision merged to decisions.md. Issue #220, #221 closed. All 1683 tests passing.
+
+### 📌 SDK/CLI File Migration — Keaton's split plan executed
+- **Phase 1 (SDK):** Copied all 15 directories (adapter, agents, build, casting, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools, utils) and 4 standalone files (index.ts, resolution.ts, parsers.ts, types.ts) from root `src/` into `packages/squad-sdk/src/`. Cleaned the SDK barrel (`packages/squad-sdk/src/index.ts`) — removed the CLI re-exports block (lines 25-52 of the original, exporting success/error/warn/fatal/SquadError/detectSquadDir/runWatch/runInit/runExport/runImport/runCopilot etc. from `./cli/index.js`). Updated SDK `package.json` exports map: removed `./cli`, added all subpath exports from Keaton's plan (resolution, runtime/streaming, coordinator, hooks, tools, adapter, client, marketplace, build, sharing, ralph, casting).
+- **Phase 2 (CLI):** Copied `src/cli/` directory and `src/cli-entry.ts` into `packages/squad-cli/src/`. Copied `templates/` into `packages/squad-cli/templates/`. Rewrote 4 cross-package imports in CLI source:
+  - `cli/upgrade.ts`: `../config/migration.js` → `@bradygaster/squad-sdk/config`
+  - `cli/copilot-install.ts`: `../config/init.js` → `@bradygaster/squad-sdk/config`
+  - `cli/shell/spawn.ts`: `../../resolution.js` → `@bradygaster/squad-sdk/resolution`
+  - `cli/shell/stream-bridge.ts`: `../../runtime/streaming.js` → `@bradygaster/squad-sdk/runtime/streaming`
+  - `cli-entry.ts`: `./resolution.js` and `./index.js` → `@bradygaster/squad-sdk`
+- **Intra-CLI imports** (within `cli/` directory) left untouched — all relative.
+- **Root `src/` preserved** — not deleted, per plan (cleanup after tests pass).
+- Pattern: SDK subpath exports match the directory barrel structure — `@bradygaster/squad-sdk/{module}` resolves to `dist/{module}/index.js`. Special cases: `./resolution` → `dist/resolution.js`, `./runtime/streaming` → `dist/runtime/streaming.js`.
+
+### 📌 Test import migration to workspace packages — completed
+- Migrated all 56 test files (173 import replacements) from relative `../src/` paths to workspace package imports.
+- SDK imports use 26 subpath exports (18 existing + 8 new): `@bradygaster/squad-sdk/config`, `@bradygaster/squad-sdk/agents`, etc.
+- CLI imports use 16 new subpath exports: `@bradygaster/squad-cli/shell/sessions`, `@bradygaster/squad-cli/core/init`, etc.
+- Added 8 new SDK subpath exports for deep modules not covered by barrels: `adapter/errors`, `config/migrations`, `runtime/event-bus`, `runtime/benchmarks`, `runtime/i18n`, `runtime/telemetry`, `runtime/offline`, `runtime/cost-tracker`.
+- Added missing barrel re-exports: `selectResponseTier`/`getTier` in coordinator/index.ts, `onboardAgent`/`addAgentToConfig` in agents/index.ts.
+- Updated consumer-imports test: CLI functions (`runInit`, `runExport`, `runImport`, `scrubEmails`) now imported from `@bradygaster/squad-cli` instead of SDK barrel.
+- Rebuilt SDK and CLI packages to update dist. All 1727 tests pass across 57 files.
+- Pattern: vitest resolves through compiled `dist/` files, not TypeScript source — barrel changes require a package rebuild to take effect.
+- Pattern: when consolidating deep imports to barrel paths, verify the barrel actually re-exports the needed symbols before assuming availability.

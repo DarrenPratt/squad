@@ -51,3 +51,23 @@ Edie's refactor split src/index.ts into pure barrel (zero side effects) and src/
 - All dist artifacts confirmed after build: `.js` + `.d.ts` for each subpath
 - Build clean, 1719/1719 tests pass
 - Branch `squad/181-squadui-p2`, closes #227
+
+### Build system migration (monorepo tsconfig + package.json)
+- Converted root `tsconfig.json` to base config with `"files": []` and project references to both workspace packages
+- SDK `tsconfig.json`: extends root, `composite: true`, `declarationMap: true`, `include: ["src/**/*.ts"]` — no JSX
+- CLI `tsconfig.json`: extends root, `composite: true`, `jsx: "react-jsx"`, `jsxImportSource: "react"`, includes `*.tsx`, project reference to SDK
+- SDK `package.json`: 18 subpath exports (Keaton's plan), `@github/copilot-sdk` as dependency, `@types/node` + `typescript` as devDeps
+- CLI `package.json`: `bin.squad` → `./dist/cli-entry.js`, added `ink`, `react` deps, `@types/react`, `esbuild`, `ink-testing-library` devDeps, `templates/` in files array
+- Root `package.json`: stripped to workspace orchestrator — `private: true`, no `main`/`types`/`bin`, no runtime deps, only `typescript` + `vitest` in devDeps, build script delegates to `--workspaces`
+- `composite: true` required in both packages for TypeScript project references to work — without it, `tsc --build` cannot resolve cross-package references
+- Build clean: both `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` compile with zero errors
+
+### 📌 Team update (2026-02-22T041800Z): Build system migration complete, all 6 config files fixed, zero TypeScript errors — decided by Edie
+Edie fixed root tsconfig (base config + project refs), SDK tsconfig (composite + no JSX), CLI tsconfig (composite + jsx), root package.json (workspace orchestrator), SDK package.json (18 subpath exports), CLI package.json (bin entry + UI deps). Composite builds enable TypeScript project references across packages. All dist artifacts (`.js`, `.d.ts`, `.d.ts.map`) emitted correctly. Build ready for Phase 3 (test import migration when root src/ removal blocks).
+
+### Fix workspace:* → npm-compatible wildcard
+- Previous commit used `workspace:*` for CLI→SDK dependency — this is pnpm/Yarn syntax, not npm
+- npm workspaces reject `workspace:` protocol with `EUNSUPPORTEDPROTOCOL`
+- Changed to `"*"` which achieves the same local resolution under npm workspaces
+- Verified: `npm install` succeeds, `npm run build` compiles both packages cleanly
+- Also verified: prepublishOnly scripts and dynamic VERSION (via createRequire) from previous commit are working correctly

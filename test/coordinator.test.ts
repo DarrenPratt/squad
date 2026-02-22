@@ -6,16 +6,16 @@ import {
   SquadCoordinator,
   type SquadCoordinatorOptions,
   type CoordinatorResult,
-} from '../src/coordinator/coordinator.js';
-import type { CoordinatorContext } from '../src/coordinator/direct-response.js';
-import { DirectResponseHandler } from '../src/coordinator/direct-response.js';
-import { EventBus } from '../src/runtime/event-bus.js';
-import { DEFAULT_CONFIG, type SquadConfig } from '../src/runtime/config.js';
+} from '@bradygaster/squad-sdk/coordinator';
+import type { CoordinatorContext } from '@bradygaster/squad-sdk/coordinator';
+import { DirectResponseHandler } from '@bradygaster/squad-sdk/coordinator';
+import { EventBus } from '@bradygaster/squad-sdk/runtime/event-bus';
+import { DEFAULT_CONFIG, type SquadConfig } from '@bradygaster/squad-sdk/runtime';
 import {
   compileRoutingRules,
   type CompiledRouter,
-} from '../src/config/routing.js';
-import type { FanOutDependencies, SpawnResult } from '../src/coordinator/fan-out.js';
+} from '@bradygaster/squad-sdk/config';
+import type { FanOutDependencies, SpawnResult } from '@bradygaster/squad-sdk/coordinator';
 import {
   resolveModel,
   ModelFallbackExecutor,
@@ -23,7 +23,7 @@ import {
   isTierFallbackAllowed,
   type ResolvedModel,
   type ModelTier,
-} from '../src/agents/model-selector.js';
+} from '@bradygaster/squad-sdk/agents';
 
 // --- Helpers ---
 

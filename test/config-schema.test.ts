@@ -12,7 +12,7 @@ import {
   GitHubAgentSource,
   MarketplaceAgentSource,
   AgentRegistry,
-} from '../src/config/index.js';
+} from '@bradygaster/squad-sdk/config';
 
 describe('Configuration Schema', () => {
   describe('DEFAULT_CONFIG', () => {

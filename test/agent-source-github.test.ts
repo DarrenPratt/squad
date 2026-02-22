@@ -9,7 +9,7 @@ import {
   type AgentManifest,
   type AgentDefinition,
   parseCharterMetadata,
-} from '../src/config/agent-source.js';
+} from '@bradygaster/squad-sdk/config';
 
 // --- Mock fetcher helper ---
 

@@ -8,7 +8,7 @@ import { mkdir, rm, readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { runInit } from '../../src/cli/core/init.js';
+import { runInit } from '@bradygaster/squad-cli/core/init';
 
 const TEST_ROOT = join(process.cwd(), `.test-cli-init-${randomBytes(4).toString('hex')}`);
 

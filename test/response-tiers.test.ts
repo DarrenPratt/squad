@@ -9,8 +9,8 @@ import {
   type ResponseTier,
   type TierName,
   type TierContext,
-} from '../src/coordinator/response-tiers.js';
-import { DEFAULT_CONFIG, defineConfig, type SquadConfig } from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/coordinator';
+import { DEFAULT_CONFIG, defineConfig, type SquadConfig } from '@bradygaster/squad-sdk/config';
 
 // --- getTier ---
 

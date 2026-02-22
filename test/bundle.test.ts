@@ -15,7 +15,7 @@ import {
   getBundleTargets,
   validateBundleOutput,
   type BundleConfig,
-} from '../src/build/bundle.js';
+} from '@bradygaster/squad-sdk/build';
 
 import {
   generatePackageJson,
@@ -23,7 +23,7 @@ import {
   getPublishFiles,
   getDefaultExports,
   type NpmPackageConfig,
-} from '../src/build/npm-package.js';
+} from '@bradygaster/squad-sdk/build';
 
 import {
   generateInstallScript,
@@ -32,7 +32,7 @@ import {
   generateNpxEntryPoint,
   getDefaultDistConfig,
   type GitHubDistConfig,
-} from '../src/build/github-dist.js';
+} from '@bradygaster/squad-sdk/build';
 
 // ─── M4-1: Bundle strategy ──────────────────────────────────────────────
 

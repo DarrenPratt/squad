@@ -9,8 +9,8 @@ import {
   generateAuditMarkdown,
   type FeatureAuditReport,
   type FeatureStatus,
-} from '../src/config/feature-audit.js';
-import { DEFAULT_CONFIG, defineConfig, type SquadConfig } from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/config';
+import { DEFAULT_CONFIG, defineConfig, type SquadConfig } from '@bradygaster/squad-sdk/config';
 
 // --- helpers ---
 

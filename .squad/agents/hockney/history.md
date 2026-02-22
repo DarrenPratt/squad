@@ -60,3 +60,27 @@ Hockney added 13 CRLF-specific test cases covering Windows line ending handling.
 - **Side-effect-free import** (1 test): importing index.ts doesn't mutate process.argv or trigger CLI behavior — test completing without hanging proves clean separation
 - Dynamic `await import()` used throughout to keep tests independent and avoid module caching issues
 - All 6 tests pass on first run; validates the barrel file split (index.ts / parsers.ts / types.ts) works correctly for consumers
+
+### Post-restructure verification (2026-02-22)
+- **Build:** `npm run build` compiles both `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` cleanly via workspace scripts. Exit code 0.
+- **Tests:** All 1719 tests pass across 56 test files. `npm run build && npm test` exits clean.
+- **vitest.config.ts:** Works as-is — no path aliases needed while root `src/` still exists.
+- **Import state:** All 56 test files still import from root `../src/` (the old monolith barrel). Only `consumer-imports.test.ts` had 3 workspace package references but dynamically imports from `../src/index.js`.
+- **Import migration deferred:** Cannot blindly rewrite `../src/X.js` → `@bradygaster/squad-sdk/X` because:
+  1. Tests import deep internal modules (e.g., `../src/config/agent-doc.js`, `../src/casting/casting-engine.js`) that aren't exposed via the SDK package's `exports` map — only 18 subpath exports exist.
+  2. CLI test files import from `../src/cli/...` which lives in `@bradygaster/squad-cli`, but that package has no subpath exports at all.
+  3. Root `src/index.ts` (v0.7.0) still re-exports CLI functions (`runInit`, `runExport`, etc.) which SDK package (v0.8.0) correctly does not export — the `consumer-imports.test.ts` tests CLI exports that don't exist in the SDK barrel.
+  4. Migrating requires either expanding the `exports` maps in both packages or adding vitest `resolve.alias` config. Both are non-trivial.
+- **Recommendation:** Migration should happen as a dedicated task when root `src/` is actually removed. Attempting it now risks breaking 1719 passing tests for no immediate benefit.
+- **Flaky test observed:** One run showed 1 failure / 1718 pass in CLI export-import tests (timing-sensitive fs operations). Not reproducible on immediate re-run — pre-existing flake.
+
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
+Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewriting (6 cross-package imports) verified correct. Test import migration deferred until root `src/` deletion blocks (lazy approach reduces risk). Tests remain on old `../src/` paths for now — migration requires expanding exports maps or vitest alias config, both non-trivial. Exports map gap + CLI no exports + barrel divergence make premature migration risky. Decision merged to decisions.md (hockney-test-import-migration.md).
+
+### Test infrastructure: coverage config + package exports test (2026-02-22)
+- **Coverage:** Installed `@vitest/coverage-v8@^3.2.0`, configured vitest with `v8` provider and `text`, `text-summary`, `html` reporters. Coverage output goes to `./coverage/` (already in `.gitignore`). Include patterns cover `src/**/*.ts` and `packages/*/src/**/*.ts`.
+- **Package exports test:** Created `test/package-exports.test.ts` with 8 tests covering SDK exports map: root (`VERSION`), `/config` (`DEFAULT_CONFIG`), `/resolution` (`resolveSquad`), `/parsers` (`parseTeamMarkdown`), `/types` (type-only, no runtime values), `/agents`, `/skills`, `/tools`.
+- Discovered `types` subpath has zero runtime exports (pure `export type` statements) — test only verifies module resolves.
+- Config subpath exports `DEFAULT_CONFIG`, `AgentRegistry`, `ModelRegistry`, etc. — not `loadSquadConfig` as initially assumed.
+- `npm install` needed `--legacy-peer-deps` flag due to `workspace:*` protocol in squad-cli's package.json (pnpm syntax, not native npm).
+- Build passes cleanly. All 8 package-exports tests pass with coverage reporting.

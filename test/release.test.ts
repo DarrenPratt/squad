@@ -19,8 +19,8 @@ import {
   type ReleaseArtifact,
   type ReleaseValidationError,
   type ReleaseChecklistItem,
-} from '../src/build/release.js';
-import type { CommitInfo } from '../src/build/versioning.js';
+} from '@bradygaster/squad-sdk/build';
+import type { CommitInfo } from '@bradygaster/squad-sdk/build';
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 

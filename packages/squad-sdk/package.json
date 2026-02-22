@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/squad-sdk",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Squad SDK — Programmable multi-agent runtime for GitHub Copilot",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,9 +30,89 @@
       "types": "./dist/agents/index.d.ts",
       "import": "./dist/agents/index.js"
     },
-    "./cli": {
-      "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js"
+    "./adapter": {
+      "types": "./dist/adapter/types.d.ts",
+      "import": "./dist/adapter/types.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./coordinator": {
+      "types": "./dist/coordinator/index.d.ts",
+      "import": "./dist/coordinator/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "import": "./dist/tools/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/config.d.ts",
+      "import": "./dist/runtime/config.js"
+    },
+    "./runtime/streaming": {
+      "types": "./dist/runtime/streaming.d.ts",
+      "import": "./dist/runtime/streaming.js"
+    },
+    "./marketplace": {
+      "types": "./dist/marketplace/index.d.ts",
+      "import": "./dist/marketplace/index.js"
+    },
+    "./build": {
+      "types": "./dist/build/index.d.ts",
+      "import": "./dist/build/index.js"
+    },
+    "./sharing": {
+      "types": "./dist/sharing/index.d.ts",
+      "import": "./dist/sharing/index.js"
+    },
+    "./ralph": {
+      "types": "./dist/ralph/index.d.ts",
+      "import": "./dist/ralph/index.js"
+    },
+    "./casting": {
+      "types": "./dist/casting/index.d.ts",
+      "import": "./dist/casting/index.js"
+    },
+    "./resolution": {
+      "types": "./dist/resolution.d.ts",
+      "import": "./dist/resolution.js"
+    },
+    "./adapter/errors": {
+      "types": "./dist/adapter/errors.d.ts",
+      "import": "./dist/adapter/errors.js"
+    },
+    "./config/migrations": {
+      "types": "./dist/config/migrations/index.d.ts",
+      "import": "./dist/config/migrations/index.js"
+    },
+    "./runtime/event-bus": {
+      "types": "./dist/runtime/event-bus.d.ts",
+      "import": "./dist/runtime/event-bus.js"
+    },
+    "./runtime/benchmarks": {
+      "types": "./dist/runtime/benchmarks.d.ts",
+      "import": "./dist/runtime/benchmarks.js"
+    },
+    "./runtime/i18n": {
+      "types": "./dist/runtime/i18n.d.ts",
+      "import": "./dist/runtime/i18n.js"
+    },
+    "./runtime/telemetry": {
+      "types": "./dist/runtime/telemetry.d.ts",
+      "import": "./dist/runtime/telemetry.js"
+    },
+    "./runtime/offline": {
+      "types": "./dist/runtime/offline.d.ts",
+      "import": "./dist/runtime/offline.js"
+    },
+    "./runtime/cost-tracker": {
+      "types": "./dist/runtime/cost-tracker.d.ts",
+      "import": "./dist/runtime/cost-tracker.js"
     }
   },
   "files": [
@@ -40,6 +120,7 @@
     "README.md"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json"
   },
   "engines": {
@@ -48,7 +129,11 @@
   "dependencies": {
     "@github/copilot-sdk": "^0.1.25"
   },
-  "keywords": [
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords":[
     "copilot",
     "multi-agent",
     "squad",

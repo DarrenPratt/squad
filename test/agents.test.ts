@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { compileCharter, type CharterCompileOptions } from '../src/agents/charter-compiler.js';
-import { resolveModel, type ModelResolutionOptions } from '../src/agents/model-selector.js';
-import { ConfigurationError } from '../src/adapter/errors.js';
+import { compileCharter, type CharterCompileOptions } from '@bradygaster/squad-sdk/agents';
+import { resolveModel, type ModelResolutionOptions } from '@bradygaster/squad-sdk/agents';
+import { ConfigurationError } from '@bradygaster/squad-sdk/adapter/errors';
 
 describe('Charter Compilation (M1-8)', () => {
   describe('compileCharter', () => {

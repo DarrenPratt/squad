@@ -18,8 +18,8 @@ import {
   validatePackageContents,
   type MarketplaceManifest,
   type ExtensionEvent,
-} from '../src/marketplace/index.js';
-import type { SquadConfig } from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/marketplace';
+import type { SquadConfig } from '@bradygaster/squad-sdk/config';
 
 // --- Helpers ---
 

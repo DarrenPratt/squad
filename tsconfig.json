@@ -4,18 +4,16 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
-    "declaration": true,
-    "declarationMap": true,
     "sourceMap": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx"
+    "isolatedModules": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "test"]
+  "files": [],
+  "references": [
+    { "path": "packages/squad-sdk" },
+    { "path": "packages/squad-cli" }
+  ]
 }

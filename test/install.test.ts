@@ -9,19 +9,19 @@ import {
   validatePipelineConfig,
   getDefaultSteps,
   type CIPipelineConfig,
-} from '../src/build/ci-pipeline.js';
+} from '@bradygaster/squad-sdk/build';
 import {
   parseConventionalCommit,
   bumpVersion,
   stampVersion,
   generateChangelog,
   type CommitInfo,
-} from '../src/build/versioning.js';
+} from '@bradygaster/squad-sdk/build';
 import {
   detectInstallMethod,
   migrateInstallPath,
   generateMigrationInstructions,
-} from '../src/build/install-migration.js';
+} from '@bradygaster/squad-sdk/build';
 
 // --- Helpers ---
 

@@ -6,14 +6,14 @@ import { describe, it, expect } from 'vitest';
 import {
   parseAgentDoc,
   type AgentDocMetadata,
-} from '../src/config/agent-doc.js';
+} from '@bradygaster/squad-sdk/config';
 import {
   syncDocToConfig,
   syncConfigToDoc,
   detectDrift,
   type DriftReport,
-} from '../src/config/doc-sync.js';
-import { defineConfig, type SquadConfig } from '../src/config/schema.js';
+} from '@bradygaster/squad-sdk/config';
+import { defineConfig, type SquadConfig } from '@bradygaster/squad-sdk/config';
 
 // ---------------------------------------------------------------------------
 // Helpers
