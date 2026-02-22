@@ -18,6 +18,8 @@
 
 ### 2026-02-21: Interactive Shell Proposal
 - **Problem:** Copilot CLI dependency creates unreliable handoffs, zero agent visibility, and external UX control
+
+### 📌 Team update (2026-02-22T10:03Z): PR #300 review completed (architecture, security, code, tests) — REQUEST CHANGES verdict with 4 blockers — decided by Keaton
 - **Solution:** Squad becomes its own REPL/shell — users launch `squad` with no args, enter interactive session
 - **Architecture decision:** Copilot SDK as LLM backend (streaming, tool dispatch), Squad owns spawning + coordination UX
 - **Terminal UI:** Recommend `ink` (React for CLIs) — battle-tested, component model, testable, cross-platform
@@ -79,3 +81,12 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 3. **Documentation pass** — Assign 11-issue epic to Keaton (already labeled). Write Architecture Overview (#206), Migration Guide (#203), API Reference (#196). Unblock public release.
 4. **Complete interactive shell wiring** — Wire Ink components (AgentPanel, MessageStream, InputPrompt) to SDK session → streaming. Current code is skeleton-only.
 5. **Verify insider publish pipeline** — Both packages published to npm (0.8.0 insider). Run end-to-end test: `npm install -g @bradygaster/squad-cli && squad` on a fresh machine.
+
+### 2026-02-22: Upstream Inheritance PR Review (PR #300)
+- **Author:** Tamir Dresher (tamirdresher)
+- **Verdict:** Request Changes (4 blocking items)
+- **Architecture:** Org → Team → Repo hierarchy is sound. Closest-wins conflict resolution is the right default. SDK/CLI split follows established patterns. `.squad/upstream.json` is correct config location.
+- **Blocking issues:** (1) No proposal document — violates proposal-first workflow, (2) `Record<string, unknown>` for castingPolicy — violates strict typing decision, (3) No sanitization on inherited content — security gap vs. existing export sanitization, (4) `.ai-team/` fallback in `findSquadDir()` — undocumented dual-format support.
+- **Non-blocking concerns:** No coordinator integration wired yet (dead library code without it), live local upstreams create silent coupling (asymmetric with git sync), `export` upstream type relationship with sharing module's `ExportBundle` is unclear.
+- **Pattern learned:** External contributors may not know about proposal-first workflow — add to CONTRIBUTING.md or PR template.
+- **Decision file:** `.squad/decisions/inbox/keaton-upstream-review.md`

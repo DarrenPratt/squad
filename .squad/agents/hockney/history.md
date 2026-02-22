@@ -18,6 +18,8 @@ Multi-agent concurrency testing is critical — spawning is the heart of the sys
 - Issue #228: Added 13 CRLF-specific tests validating Windows line ending handling across all 5 parsers.
 - Issue #230: Created consumer-imports.test.ts (6 tests) validating barrel exports from library consumer perspective.
 - Post-restructure: All 1719 tests passing post-SDK/CLI migration. Test import migration deferred until root src/ deletion (exports maps expansion needed).
+
+### 📌 Team update (2026-02-22T10:03Z): PR #300 test coverage review completed — BLOCKED, PR #300 does not exist in repository — spec written for when PR materializes (37+ tests needed) — decided by Hockney
 - Coverage: Installed @vitest/coverage-v8, configured v8 provider with text/text-summary/html reporters.
 
 ---
@@ -118,3 +120,9 @@ Two EventBus APIs require different mocks: client bus uses on()/emit(), runtime 
 
 ### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
 All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.
+
+### PR #300 upstream inheritance test review — requested by Brady (2026-02-23)
+- **Verdict: PR #300 does not exist.** No PR, no branch, no source files, no test files found in repo or on GitHub remote. The referenced files (`packages/squad-sdk/src/upstream/resolver.ts`, `packages/squad-sdk/src/upstream/types.ts`, `packages/squad-cli/src/cli/commands/upstream.ts`, `test/upstream.test.ts`, `test/upstream-e2e.test.ts`) do not exist anywhere.
+- Searched: all branches (25 remote), all PRs (open/closed), issues, local filesystem, glob patterns. Zero matches for "upstream" in any context.
+- Prepared a test coverage requirements spec for when this PR materializes. Key gaps to enforce: CLI command tests (add/remove/list/sync), circular reference detection, .ai-team/ fallback, malformed JSON, empty upstreams array, transitive inheritance proof in E2E.
+- Baseline at time of review: 1940 tests across 68 files, all passing.

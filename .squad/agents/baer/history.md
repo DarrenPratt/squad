@@ -13,3 +13,14 @@
 - File-write guard hooks: prevent agents from writing to unauthorized paths
 - Security review is a gate: Baer can reject and lock out the original author
 - Pragmatic security: raise real risks, not hypothetical ones
+
+### PR #300 Security Review — Upstream Inheritance (2026-02-22)
+- Reviewed `resolver.ts` and `upstream.ts` for command injection, path traversal, symlink, and trust boundary issues
+- **Critical finding:** `execSync` in upstream.ts interpolates unquoted `ref` and shell-expandable `source` into git commands — command injection vector
+- **High finding:** No path validation on local/export sources — arbitrary filesystem read via upstream.json
+
+### 📌 Team update (2026-02-22T10:03Z): PR #300 security review completed — BLOCK verdict with 4 critical/high/medium findings — decided by Baer
+- **Medium findings:** Symlink following, no user consent model, prompt injection via upstream content
+- Upstream content flows directly into agent spawn prompts — governance risk if org-level repo is compromised
+- No size limits on file reads from upstream sources
+- Tests cover functionality well but have zero security-boundary tests (no traversal, injection, or symlink tests)

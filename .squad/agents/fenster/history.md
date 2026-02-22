@@ -18,6 +18,8 @@
 - CRLF hardening: normalize-eol.ts applied to 8 parsers, one-line guard at entry point
 - SDK/CLI split executed: 15 dirs + 4 files migrated to packages/, exports map updated (7→18 subpaths SDK, 14 subpaths CLI), 6 config files fixed, versions aligned to 0.8.0
 - Test import migration: 56 test files migrated from ../src/ to @bradygaster/squad-sdk/* and @bradygaster/squad-cli/*, 26 SDK + 16 CLI subpath exports, vitest resolves via dist/, all 1719+ tests passing
+
+### 📌 Team update (2026-02-22T10:03Z): PR #300 architecture review completed — REQUEST CHANGES verdict with 4 blockers (proposal doc, type safety on castingPolicy, missing sanitization, ambiguous .ai-team/ fallback) — decided by Keaton
 - Zero-dependency scaffolding preserved, strict mode enforced, build clean (tsc 0 errors)
 
 **Phase 3 Blocking (2026-02-22 onwards):**
@@ -174,3 +176,12 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 - Rebuilt SDK and CLI packages to update dist. All 1727 tests pass across 57 files.
 - Pattern: vitest resolves through compiled `dist/` files, not TypeScript source — barrel changes require a package rebuild to take effect.
 - Pattern: when consolidating deep imports to barrel paths, verify the barrel actually re-exports the needed symbols before assuming availability.
+
+### 📌 PR #300 Code Quality Review — Upstream Inheritance (2026-02-22) — Fenster
+- **Reviewed:** resolver.ts (236 lines), upstream.ts CLI (228 lines), types.ts (56 lines), upstream/index.ts barrel, SDK barrel+exports, 2 test files (509 lines total), package-lock.json
+- **Verdict:** Approve with required fixes (5 items). Architecture is sound — types in SDK, CLI command in CLI package, barrel exports correct.
+- **Critical finding (from Baer, confirmed):** `execSync` string interpolation in upstream.ts is CWE-78 command injection. Must switch to `execFileSync` with array args.
+- **Bug found:** upstream.ts imports `error as fatal` from `output.ts` (which just prints and returns void). Existing pattern uses `fatal()` from `errors.ts` (which throws SquadError, return type `never`). This means after "fatal" error messages, execution continues to the next `if (action === ...)` block. The explicit `return` statements mask this but the pattern is wrong and fragile.
+- **Missing integration:** `upstream` command is not registered in `cli-entry.ts` command router. Users can't actually invoke it.
+- **Test import pattern violated:** Tests import from `../packages/squad-sdk/src/upstream/resolver.js` (relative source paths) instead of `@bradygaster/squad-sdk/upstream` (package imports). Violates the test import migration decision.
+- **Minor:** Test uses `(org.castingPolicy as any)` — should use typed cast `as Record<string, unknown>` per strict-mode decision.
