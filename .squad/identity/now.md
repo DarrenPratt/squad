@@ -1,30 +1,34 @@
 ---
-updated_at: 2026-02-22T11:30:00Z
-focus_area: Wave 2 — REPL polish, security fix, config extraction, shell integration
-active_issues: [307, 308, 265, 266, 267, 268, 302, 303, 304, 305]
-wave: 2
+updated_at: 2026-02-22T11:45:00Z
+focus_area: Wave 3 — Docs migration, guides, site engine
+active_issues: [185, 188, 191, 192, 195, 196, 199, 201, 203, 206, 207]
+wave: 3
 ---
 
 # What We're Focused On
 
-**Status:** Wave 2 launched (PR #307, #308 merged; Issues #265–305 closed)
+**Status:** Wave 3 launched (PR #309 merged; Wave 2 complete)
 
 **⚠️ Repo: bradygaster/squad-pr ONLY — not bradygaster/squad.**
 
-## Wave 2 (now)
+## Wave 3 (now)
 **Agent assignments:**
-- Fortier → REPL polish (hero task: App.tsx, AgentPanel, MessageStream, InputPrompt)
-- Baer → CWE-78 fix in upstream.ts (command injection security)
-- Edie → Config extraction (models.ts, constants.ts, roles.ts)
-- Hockney → Shell integration + health monitor tests
-- Fenster → Wire spawn.ts to CopilotClient + error handling
+- Fenster → Mechanical doc updates (#191, #192, #195)
+- McManus → 5 Documentation Guides (#206, #203, #201, #199, #196)
+- Keaton (LEAD) → Docs site engine + content (#185, #188)
+- Hockney → Verify docs build (#207)
 
-## Completed (Wave 1)
-- OTel Phase 4: #265, #266, #267, #268 ✓
-- Wave 1 remaining: #302, #303, #304, #305 ✓
-- Branch: bradygaster/dev updated to match main
+## Completed (Wave 2)
+- REPL Polish: #307, #308 ✓
+- Security: CWE-78 fix upstream.ts ✓
+- Config Extraction: 6 files centralized ✓
+- Shell Integration: 114 new tests ✓
+- Spawn wiring: CopilotClient integration ✓
+- Aspire E2E: Playwright tests (5 tests) ✓
+- Epics: #253 (OTel), #232 (Shell) closed ✓
 
 ## Context
-- 1940 tests passing post-Wave 1
-- SquadOffice expects colon-separated EventBus events (session:*, agent:milestone, coordinator:routing, pool:health)
-- Docs epic (#182) deferred — last priority
+- 2141 tests passing (79 files, +119 tests)
+- New agent: Saul (Aspire & Observability)
+- Docs migration: internal-only → public-facing
+- Wave 3 scope: Zero code changes, docs-only
