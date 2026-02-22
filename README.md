@@ -641,7 +641,7 @@ npm run dev            # Watch TypeScript in background
 npm run lint           # Type check (tsc --noEmit)
 ```
 
-**Test coverage:** 1,551 tests across 45 test files. Core modules tested:
+**Test coverage:** 1,670 tests across 52 test files. Core modules tested:
 - Session lifecycle (create, resume, end)
 - Tool execution and validation
 - Hook pipeline (guards, PII scrubbing, lockouts)
@@ -667,7 +667,7 @@ npm run lint           # Type check (tsc --noEmit)
 
 ## Status
 
-🟣 **Alpha** — v0.6.0-alpha.0.
+🟢 **Production** — v0.6.0.
 
 Your team (`.squad/` folder) is always portable and safe. The orchestration runtime is what evolves.
 
