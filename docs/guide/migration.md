@@ -4,9 +4,9 @@ Squad v1 is a replatform from the monolithic Agent framework to a programmable S
 
 ## What Changed
 
-### 1. Directory Structure: `.ai-team/` → `.squad/`
+### 1. Directory Structure: `.squad/` → `.squad/`
 
-**Beta:** `.ai-team/` directory for all team state
+**Beta:** `.squad/` directory for all team state
 **v1:** `.squad/` directory (required)
 
 **Why:** "Squad" is the product name. Clearer, more memorable.
@@ -33,12 +33,12 @@ npm install -g @bradygaster/squad-cli # Global CLI (binary)
 | `npx squad upgrade` | `squad upgrade` | ✅ Same, now global |
 | `npx squad status` | `squad status` | ✅ Same, now global |
 | `npx squad watch` | `squad watch` | ✅ Same, now global |
-| `.ai-team/` auto-creation | `squad init --global` | ✅ New: personal squad flag |
-| Legacy path `.ai-team/` | Rename with `squad upgrade --migrate-directory` | ✅ Automated migration |
+| `.squad/` auto-creation | `squad init --global` | ✅ New: personal squad flag |
+| Legacy path `.squad/` | Rename with `squad upgrade --migrate-directory` | ✅ Automated migration |
 
 ### 4. Configuration Files
 
-#### Beta Config (`.ai-team/squad.agent.md`)
+#### Beta Config (`.squad/squad.agent.md`)
 
 ```markdown
 # squad.agent.md — 32KB monolithic coordinator prompt
@@ -69,7 +69,7 @@ export default defineConfig({
 
 ### 5. Agent Charter Format
 
-**Beta:** `.ai-team/agents/{name}/charter.md` (freeform)
+**Beta:** `.squad/agents/{name}/charter.md` (freeform)
 
 **v1:** `.squad/agents/{name}/charter.md` (structured)
 
@@ -119,7 +119,7 @@ squad init
 
 - Node.js ≥ 20
 - GitHub auth (for Issues, PRs): `gh auth login`
-- Existing squad in `.ai-team/` (beta)
+- Existing squad in `.squad/` (beta)
 
 ### 1. Backup Your Team
 
@@ -142,22 +142,22 @@ squad --version
 ```bash
 # From your project root:
 squad upgrade --migrate-directory
-# This renames .ai-team/ → .squad/
+# This renames .squad/ → .squad/
 ```
 
 **What it does:**
-- Moves `.ai-team/agents/` → `.squad/agents/`
-- Moves `.ai-team/casting/` → `.squad/casting/`
-- Moves `.ai-team/skills/` → `.squad/skills/`
-- Moves `.ai-team/decisions/` → `.squad/decisions/`
-- Keeps `.ai-team-templates/` for rollback reference
+- Moves `.squad/agents/` → `.squad/agents/`
+- Moves `.squad/casting/` → `.squad/casting/`
+- Moves `.squad/skills/` → `.squad/skills/`
+- Moves `.squad/decisions/` → `.squad/decisions/`
+- Keeps `.squad-templates/` for rollback reference
 - Updates `.gitignore` to ignore `.squad/` instead
 
 **If something goes wrong:**
 ```bash
-# Rollback: directory was renamed; old .ai-team/ backed up
+# Rollback: directory was renamed; old .squad/ backed up
 rm -rf .squad/
-mv .ai-team-backup/ .ai-team/  # if command created a backup
+mv .squad-backup/ .squad/  # if command created a backup
 ```
 
 ### 4. Upgrade Squad Files
@@ -229,7 +229,7 @@ Decisions in `.squad/decisions/` are preserved. The decision format hasn't chang
 
 ```bash
 git add .squad/ .gitignore
-git commit -m "chore: migrate beta squad to v1 (.ai-team → .squad)"
+git commit -m "chore: migrate beta squad to v1 (.squad → .squad)"
 ```
 
 ## What's New in v1
@@ -299,14 +299,14 @@ npx @bradygaster/squad-cli init
 
 **Fix:**
 ```bash
-# Check if .ai-team/ still exists
-ls -la | grep -E '\.ai-team|\.squad'
+# Check if .squad/ still exists
+ls -la | grep -E '\.squad|\.squad'
 
-# If .ai-team/ exists, retry migration
+# If .squad/ exists, retry migration
 squad upgrade --migrate-directory
 
 # If both exist, manually rename (careful!):
-mv .ai-team/ .squad/
+mv .squad/ .squad/
 ```
 
 ### Agent won't load after migration
@@ -339,7 +339,7 @@ mv .ai-team/ .squad/
 ## FAQ
 
 **Q: Do I need to recreate my agents?**
-A: No. Agents in `.ai-team/agents/` carry over to `.squad/agents/`. Just run `squad upgrade --migrate-directory`.
+A: No. Agents in `.squad/agents/` carry over to `.squad/agents/`. Just run `squad upgrade --migrate-directory`.
 
 **Q: Will my scripts break?**
 A: If you call `squad` commands, just make sure to install the CLI globally or use `npx @bradygaster/squad-cli`. SDK API is the same.
@@ -351,7 +351,7 @@ A: No. They both use `@bradygaster/squad-sdk` and `@bradygaster/squad-cli`. Upgr
 A: It still powers agent execution in Copilot. v1 is a new SDK wrapper + CLI + observability. The framework itself is unchanged.
 
 **Q: Is there a rollback plan?**
-A: Yes. The migration command creates a `.ai-team-templates/` backup. You can manually rename `.squad/` back to `.ai-team/` and reinstall v0.x if needed.
+A: Yes. The migration command creates a `.squad-templates/` backup. You can manually rename `.squad/` back to `.squad/` and reinstall v0.x if needed.
 
 **Q: When does beta support end?**
 A: Beta is no longer maintained. Migrate to v1 for bug fixes, new features, and OTel observability.

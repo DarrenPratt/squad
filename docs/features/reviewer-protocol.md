@@ -81,7 +81,7 @@ When rejection happens, coordinator has two options:
 | Scope | Duration |
 |-------|----------|
 | **Task-specific** | Lockout applies to the specific PR/issue, not all work |
-| **Session-persistent** | Lockout survives session restarts (stored in `.ai-team/orchestration-log/`) |
+| **Session-persistent** | Lockout survives session restarts (stored in `.squad/orchestration-log/`) |
 | **Clearable** | User can manually unlock: "Unlock Fenster for issue #42" |
 
 An agent locked out of issue #42 can still work on issue #43, #44, etc. Lockout is not a global ban.
@@ -120,7 +120,7 @@ Coordinator clears the lockout. Fenster can now revise the PR. Use this when:
 
 ## Lockout Logs
 
-Lockouts are recorded in `.ai-team/orchestration-log/`:
+Lockouts are recorded in `.squad/orchestration-log/`:
 
 ```
 [2024-01-15 15:45:30] REVIEW: Lead rejected PR #12 (author: Fenster)

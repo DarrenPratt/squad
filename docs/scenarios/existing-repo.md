@@ -33,9 +33,9 @@ squad
 ```
 ✅ .github/agents/squad.agent.md (v0.2.0)
 ✅ .github/workflows/ (10 workflows)
-✅ .ai-team-templates/
-✅ .ai-team/skills/ (starter skills)
-✅ .ai-team/ceremonies.md
+✅ .squad-templates/
+✅ .squad/skills/ (starter skills)
+✅ .squad/ceremonies.md
 ✅ .gitattributes (merge=union rules)
 
 Squad is ready.
@@ -171,7 +171,7 @@ Because Morpheus already explored the codebase, he knows the Prisma schema, the 
 ## 6. Commit Your Team
 
 ```bash
-git add .ai-team/ .ai-team-templates/ .github/ .gitattributes
+git add .squad/ .squad-templates/ .github/ .gitattributes
 git commit -m "Add Squad team"
 ```
 

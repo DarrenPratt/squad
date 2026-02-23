@@ -4,9 +4,9 @@ Full release history for Squad. For the latest version, see [README](../README.m
 
 ## v0.5.2
 
-- **`upgrade --migrate-directory` exits early fix** — The directory rename step no longer calls `process.exit(0)`, so the full upgrade (squad.agent.md, workflows, .ai-team-templates) now runs after migration in one command
+- **`upgrade --migrate-directory` exits early fix** — The directory rename step no longer calls `process.exit(0)`, so the full upgrade (squad.agent.md, workflows, .squad-templates) now runs after migration in one command
 - **`.slnx`, `.fsproj`, `.vbproj` not detected as .NET** — Proper Visual Studio solution files and F#/VB.NET project files now detected; repos using these get proper dotnet stub CI workflows
-- **Migrations use detected squad directory** — Migration steps and `.gitattributes` rules now use the detected squad directory (`.squad/` or `.ai-team/`) so they work correctly after `--migrate-directory` runs
+- **Migrations use detected squad directory** — Migration steps and `.gitattributes` rules now use the detected squad directory (`.squad/` or `.squad/`) so they work correctly after `--migrate-directory` runs
 
 ## v0.5.1
 
@@ -16,7 +16,7 @@ Full release history for Squad. For the latest version, see [README](../README.m
 
 ## v0.5.0 — The `.squad/` Rename Release
 
-- [**`.ai-team/` renamed to `.squad/`**](../docs/migration/v0.5.0-squad-rename.md) — Full directory rename with backward-compatible migration utilities. Existing repos continue to work; migration required by v1.0.0.
+- [**`.squad/` renamed to `.squad/`**](../docs/migration/v0.5.0-squad-rename.md) — Full directory rename with backward-compatible migration utilities. Existing repos continue to work; migration required by v1.0.0.
 - [**Decision lifecycle management**](../docs/features/decision-lifecycle.md) — Archival and versioning support for design decisions across the agent lifecycle
 - **Identity layer** — New `wisdom.md` and `now.md` files for agent context and temporal awareness
 - **ISO 8601 UTC timestamps** — Standardized timestamp format throughout (decision dates, agent updates, metadata)
@@ -36,8 +36,8 @@ Full release history for Squad. For the latest version, see [README](../README.m
 - **Task spawn UI** — Added role emoji to task descriptions for visual consistency; 11 role patterns mapped to emoji (🏗️ Lead, 🔧 Backend, ⚛️ Frontend, 🧪 Tester, etc.)
 - **Ralph heartbeat workflow syntax fix** — Removed duplicate `issues:` trigger keys in `squad-heartbeat.yml`; combined into single trigger
 - **Community page links fixed** — GitHub Discussions links now work correctly (Discussions enabled on repo)
-- [**`squad upgrade --self` command**](../docs/scenarios/upgrading.md) — New flag for refreshing squad repo's own `.ai-team/` from templates; preserves agent history
-- **Deprecation banner for .ai-team/ → .squad/ rename** — CLI and coordinator warn users that v0.5.0 will rename `.ai-team/` to `.squad/`
+- [**`squad upgrade --self` command**](../docs/scenarios/upgrading.md) — New flag for refreshing squad repo's own `.squad/` from templates; preserves agent history
+- **Deprecation banner for .squad/ → .squad/ rename** — CLI and coordinator warn users that v0.5.0 will rename `.squad/` to `.squad/`
 - **Stale workflow references fixed** — All documentation updated to reference correct `squad-heartbeat.yml` filename
 
 ## v0.4.0

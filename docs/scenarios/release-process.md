@@ -34,11 +34,11 @@ Squad uses a **three-branch model** for release safety:
 
 | Branch | Purpose | Who Commits | Guard Active? | Files Allowed |
 |--------|---------|------------|---------------|---------------|
-| **dev** | Development — all work happens here | All team members | ❌ No | Everything (`.ai-team/`, team-docs, etc.) |
-| **preview** | Staging/testing — validated product only | Release coordinator | ✅ Yes | Distribution files only (`.ai-team/` blocked) |
-| **main** | Production — release source for `npx` | Release coordinator | ✅ Yes | Distribution files only (`.ai-team/` blocked) |
+| **dev** | Development — all work happens here | All team members | ❌ No | Everything (`.squad/`, team-docs, etc.) |
+| **preview** | Staging/testing — validated product only | Release coordinator | ✅ Yes | Distribution files only (`.squad/` blocked) |
+| **main** | Production — release source for `npx` | Release coordinator | ✅ Yes | Distribution files only (`.squad/` blocked) |
 
-**Key principle:** `.ai-team/` (team state) and internal `team-docs/` (except blog) never leave dev. When code ships, it ships clean.
+**Key principle:** `.squad/` (team state) and internal `team-docs/` (except blog) never leave dev. When code ships, it ships clean.
 
 ---
 
@@ -67,8 +67,8 @@ git reset --hard dev
 Before pushing to `preview`, remove forbidden paths that the guard workflow will block:
 
 ```bash
-# Remove .ai-team/ (keep local copy via .gitignore)
-git rm --cached -r .ai-team/
+# Remove .squad/ (keep local copy via .gitignore)
+git rm --cached -r .squad/
 
 # Remove team-docs/
 git rm --cached -r team-docs/
@@ -295,7 +295,7 @@ Follow [Preview Build Workflow](#preview-build-workflow) above. Summary:
 ```bash
 git checkout preview
 git reset --hard origin/dev
-git rm --cached -r .ai-team/ 2>/dev/null
+git rm --cached -r .squad/ 2>/dev/null
 git rm --cached -r team-docs/ 2>/dev/null
 git commit -m "chore: remove forbidden paths for preview" 2>/dev/null
 git push -f origin preview
@@ -393,10 +393,10 @@ The repository enforces protection rules on `main` and `preview` to prevent acci
 
 | Branch | Rule | Effect |
 |--------|------|--------|
-| `main` | Require guard workflow to pass | PRs with `.ai-team/` or team-docs/ (except blog) are **blocked** |
+| `main` | Require guard workflow to pass | PRs with `.squad/` or team-docs/ (except blog) are **blocked** |
 | `main` | Require PR review | All PRs require at least 1 approval |
 | `main` | Require status checks to pass | Tests must pass before merge allowed |
-| `preview` | Require guard workflow to pass | PRs with `.ai-team/` or team-docs/ (except blog) are **blocked** |
+| `preview` | Require guard workflow to pass | PRs with `.squad/` or team-docs/ (except blog) are **blocked** |
 
 ### The Guard Workflow
 
@@ -408,7 +408,7 @@ The repository enforces protection rules on `main` and `preview` to prevent acci
 
 ```javascript
 // Forbidden on main and preview:
-✗ .ai-team/**          (zero exceptions — team state never ships)
+✗ .squad/**          (zero exceptions — team state never ships)
 ✗ team-docs/**         (zero exceptions — internal team docs never ship)
 
 // Allowed everywhere:
@@ -429,16 +429,16 @@ The repository enforces protection rules on `main` and `preview` to prevent acci
 ## 🚫 Forbidden files detected in PR to main
 
 The following files must NOT be merged into `main`.
-`.ai-team/` is runtime team state — it belongs on dev branches only.
+`.squad/` is runtime team state — it belongs on dev branches only.
 `team-docs/` is internal team content — it belongs on dev branches only.
 
 ### Forbidden files found:
-- `.ai-team/agents/neo/history.md`
-- `.ai-team/decisions.md`
+- `.squad/agents/neo/history.md`
+- `.squad/decisions.md`
 - `team-docs/internal/roadmap.md`
 
 ### How to fix:
-git rm --cached -r .ai-team/
+git rm --cached -r .squad/
 git rm --cached -r team-docs/
 git commit -m "chore: remove forbidden paths from PR"
 git push
@@ -456,7 +456,7 @@ git push
 
 Verify the guard blocks forbidden files. Use a sacrificial PR.
 
-### Test 1: Verify Guard Blocks .ai-team/
+### Test 1: Verify Guard Blocks .squad/
 
 1. **Create a test branch:**
 
@@ -464,21 +464,21 @@ Verify the guard blocks forbidden files. Use a sacrificial PR.
 git checkout -b test/guard-ai-team-block
 ```
 
-2. **Add a fake .ai-team/ file:**
+2. **Add a fake .squad/ file:**
 
 ```bash
-mkdir -p .ai-team/agents/test
-echo "test content" > .ai-team/agents/test/history.md
-git add .ai-team/agents/test/history.md
-git commit -m "test: add .ai-team/ file to verify guard blocks it"
+mkdir -p .squad/agents/test
+echo "test content" > .squad/agents/test/history.md
+git add .squad/agents/test/history.md
+git commit -m "test: add .squad/ file to verify guard blocks it"
 git push -u origin test/guard-ai-team-block
 ```
 
 3. **Create PR to main:**
 
 ```bash
-gh pr create --base main --title "test: guard should block .ai-team/" \
-  --body "This PR tests that the guard blocks .ai-team/ files"
+gh pr create --base main --title "test: guard should block .squad/" \
+  --body "This PR tests that the guard blocks .squad/ files"
 ```
 
 4. **Check the PR status:**
@@ -489,13 +489,13 @@ gh pr view <PR_NUMBER>
 gh pr view <PR_NUMBER> --web
 ```
 
-Expected: ❌ Guard workflow reports forbidden files. PR cannot merge until `.ai-team/` is removed.
+Expected: ❌ Guard workflow reports forbidden files. PR cannot merge until `.squad/` is removed.
 
 5. **Clean up the PR:**
 
 ```bash
-git rm --cached -r .ai-team/
-git commit -m "fix: remove .ai-team/ file"
+git rm --cached -r .squad/
+git commit -m "fix: remove .squad/ file"
 git push
 ```
 
@@ -592,13 +592,13 @@ gh pr close --delete-branch
 
 **Error message:** `🚫 Forbidden files detected in PR to main`
 
-**Cause:** You have `.ai-team/` or internal `team-docs/` files in the PR.
+**Cause:** You have `.squad/` or internal `team-docs/` files in the PR.
 
 **Fix:**
 
 ```bash
-# Remove .ai-team/ (keeps local copy)
-git rm --cached -r .ai-team/
+# Remove .squad/ (keeps local copy)
+git rm --cached -r .squad/
 
 # Remove team-docs/
 git rm --cached -r team-docs/
@@ -634,27 +634,27 @@ ssh -T git@github.com
 
 ---
 
-### Issue: .ai-team/ Files Keep Getting Committed
+### Issue: .squad/ Files Keep Getting Committed
 
-**Symptom:** `.ai-team/` shows as untracked but somehow appears in commits.
+**Symptom:** `.squad/` shows as untracked but somehow appears in commits.
 
 **Cause:** Files were previously tracked (added with `git add -f` before `.gitignore` was updated).
 
 **Fix:** Remove tracked copies permanently (one time per repo):
 
 ```bash
-# Remove .ai-team/ from git tracking
-git rm --cached -r .ai-team/
+# Remove .squad/ from git tracking
+git rm --cached -r .squad/
 
-# Verify .gitignore has .ai-team/
-grep ".ai-team" .gitignore
+# Verify .gitignore has .squad/
+grep ".squad" .gitignore
 
 # If not, add it
-echo ".ai-team/" >> .gitignore
+echo ".squad/" >> .gitignore
 
 # Commit
 git add .gitignore
-git commit -m "chore: ensure .ai-team/ is untracked"
+git commit -m "chore: ensure .squad/ is untracked"
 git push origin dev
 ```
 
@@ -739,7 +739,7 @@ Use these features as the new entry:
 ```
 Kobayashi, build a preview branch:
 1. Create preview branch from dev
-2. Remove .ai-team/ and team-docs/ (except blog)
+2. Remove .squad/ and team-docs/ (except blog)
 3. Commit the removal
 4. Push to origin
 5. Wait for guard workflow to pass
@@ -771,7 +771,7 @@ Kobayashi, sync main back to dev:
 ```
 Kobayashi, test the guard workflow:
 1. Create a test branch test/guard-ai-team-block
-2. Add .ai-team/agents/test/history.md with dummy content
+2. Add .squad/agents/test/history.md with dummy content
 3. Commit and push
 4. Create PR to main
 5. Report the guard result (should fail)
@@ -785,7 +785,7 @@ Kobayashi, test the guard workflow:
 ```
 Kobayashi, fix this blocked PR:
 1. Fetch the current PR state
-2. Remove all .ai-team/ and team-docs/ files
+2. Remove all .squad/ and team-docs/ files
 3. Commit the removal
 4. Push to update the PR
 5. Wait for guard to pass
@@ -809,7 +809,7 @@ Kobayashi, fix this blocked PR:
 
 - **Preview is your staging environment.** Test everything there before merging to main.
 - **Guard is your safety net.** Let it block forbidden files—it's preventing distribution corruption.
-- **`.ai-team/` never leaves dev.** It's runtime state, not product.
+- **`.squad/` never leaves dev.** It's runtime state, not product.
 - **Tag from main only.** This is your single source of truth for releases.
 - **Version in package.json must match git tag.** Keep them in sync.
 - **Communicate releases.** Update team.md, decisions.md, and CHANGELOG.md before shipping.

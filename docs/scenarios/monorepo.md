@@ -80,7 +80,7 @@ That's a **10-agent team** (9 active + Scribe). You can trim it if you want:
 
 ## 3. Routing Rules Direct Work to the Right Specialist
 
-Edit `.ai-team/routing.md`:
+Edit `.squad/routing.md`:
 
 ```markdown
 # Routing Rules
@@ -144,7 +144,7 @@ All four work in parallel, each in their own service directory.
 
 Some patterns apply **across all services**:
 
-`.ai-team/skills/service-logging-pattern.md`:
+`.squad/skills/service-logging-pattern.md`:
 
 ```markdown
 # Service Logging Pattern
@@ -168,7 +168,7 @@ Every service must log:
 
 This skill is read by **all agents**, regardless of which service they're working on. Consistent logging across the monorepo.
 
-`.ai-team/skills/inter-service-communication.md`:
+`.squad/skills/inter-service-communication.md`:
 
 ```markdown
 # Inter-Service Communication

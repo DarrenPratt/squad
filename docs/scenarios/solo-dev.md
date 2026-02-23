@@ -85,7 +85,7 @@ This is the safety net you don't have as a solo dev. Michael catches issues befo
 
 After Michael rejects Fredo's code for missing rate limiting, **it gets encoded as a skill**:
 
-`.ai-team/skills/auth-rate-limiting.md`:
+`.squad/skills/auth-rate-limiting.md`:
 
 ```markdown
 # Authentication Endpoints Must Be Rate-Limited
@@ -105,8 +105,8 @@ Next time any agent builds an auth feature, they read this skill first. The mist
 
 As a solo dev, you juggle dozens of context switches. Squad doesn't forget:
 
-- **Decisions** are logged. "Why did I use PostgreSQL instead of MongoDB?" — check `.ai-team/decisions.md`.
-- **Skills** capture patterns. "How do I structure FastAPI routes?" — check `.ai-team/skills/`.
+- **Decisions** are logged. "Why did I use PostgreSQL instead of MongoDB?" — check `.squad/decisions.md`.
+- **Skills** capture patterns. "How do I structure FastAPI routes?" — check `.squad/skills/`.
 - **Histories** track what each agent learned. Fredo knows your database schema after one session.
 
 You get back to a project after 3 weeks, and the team is still up to speed.
@@ -169,6 +169,6 @@ Michael's not always right, but having a second opinion is invaluable.
 
 - **Start with 3–4 agents, not 5.** As a solo dev, you don't need a frontend and backend specialist if you're only building one layer.
 - **The Lead is your reviewer.** Even if you don't delegate tasks, use Michael to review your own code before committing.
-- **Skills are YOUR documentation.** After 10 sessions, your `.ai-team/skills/` directory is a custom knowledge base about your project.
+- **Skills are YOUR documentation.** After 10 sessions, your `.squad/skills/` directory is a custom knowledge base about your project.
 - **Agents work while you're thinking.** Give a vague task ("explore auth options"), and agents research in parallel while you handle something else.
 - **You get a testing discipline.** Kay writes tests you'd skip. Over time, your coverage goes up without extra effort.

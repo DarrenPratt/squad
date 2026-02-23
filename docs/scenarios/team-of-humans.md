@@ -40,7 +40,7 @@ Humans appear in the roster but don't get charters.
 Work can be routed to them via routing rules.
 ```
 
-Squad adds them to `.ai-team/team.md`:
+Squad adds them to `.squad/team.md`:
 
 ```markdown
 ## Human Team Members
@@ -53,7 +53,7 @@ Squad adds them to `.ai-team/team.md`:
 
 ## 2. Routing Rules for Mixed Teams
 
-Edit `.ai-team/routing.md` to route work to humans:
+Edit `.squad/routing.md` to route work to humans:
 
 ```markdown
 # Routing Rules

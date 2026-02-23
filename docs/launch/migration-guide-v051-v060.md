@@ -24,12 +24,12 @@ npm install @squad/sdk@0.6.0
 
 ## Step 2: Generate Typed Config from Markdown
 
-Run the automated migration to convert `.ai-team/` files:
+Run the automated migration to convert `.squad/` files:
 
 ```typescript
 import { migrateMarkdownToConfig } from '@squad/sdk';
 
-const config = await migrateMarkdownToConfig('.ai-team/');
+const config = await migrateMarkdownToConfig('.squad/');
 // Writes squad.config.ts to project root
 ```
 
@@ -37,7 +37,7 @@ This calls `parseTeamMarkdown()` on `team.md`, `parseRoutingMarkdown()` on `rout
 
 ## Step 3: Migrate Agent Docs
 
-Agent markdown files (`.ai-team/agents/*.md`) become structured agent config entries. `parseAgentDoc()` extracts metadata from each file:
+Agent markdown files (`.squad/agents/*.md`) become structured agent config entries. `parseAgentDoc()` extracts metadata from each file:
 
 ```typescript
 import { parseAgentDoc, syncDocToConfig } from '@squad/sdk';

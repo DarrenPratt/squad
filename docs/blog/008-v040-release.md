@@ -14,7 +14,7 @@ hero: "v0.4.0 ships VS Code support, GitHub Projects integration, real-time agen
 
 ## What Shipped
 
-- **VS Code Support** — Agents run inside VS Code Copilot, not just the CLI. Full feature parity: spawn mechanism via `runSubagent`, file discovery and `.ai-team/` access, background execution, parallel sub-agents. Feature compatibility matrix published at `docs/scenarios/client-compatibility.md`. _(Verbal + Fenster)_
+- **VS Code Support** — Agents run inside VS Code Copilot, not just the CLI. Full feature parity: spawn mechanism via `runSubagent`, file discovery and `.squad/` access, background execution, parallel sub-agents. Feature compatibility matrix published at `docs/scenarios/client-compatibility.md`. _(Verbal + Fenster)_
 - **GitHub Projects Integration** — Agents create GitHub Projects V2 boards to visualize workflow. Work items move through Todo → In Progress → Done. Agents track their own status without manual board updates. _(Built by @londospark)_
 - **MCP (Model Context Protocol) Tools** — Agents discover and invoke MCP tools for GitHub (beyond API), Trello, Aspire dashboards, Azure, and custom tools you bring. Discovery is automatic. Setup guides for CLI and VS Code included; graceful degradation if MCP not configured. _(Built by @csharpfritz)_
 - **Agent Progress Updates** — Long-running tasks emit `[MILESTONE]` markers. The coordinator polls every 30 seconds and relays updates to you as 📍 status messages. No more wondering if anything is happening. _(Built by Fenster)_
@@ -25,7 +25,7 @@ hero: "v0.4.0 ships VS Code support, GitHub Projects integration, real-time agen
 
 ## The Story
 
-Three releases in, Squad proved itself: agents work in parallel, they remember you and your code, they learn and adapt. But Squad was locked to one environment — the CLI. Copy the `.ai-team/` folder to VS Code? Agents couldn't see it. Run on a laptop without SSH agent configured? The spinner hid the passphrase prompt.
+Three releases in, Squad proved itself: agents work in parallel, they remember you and your code, they learn and adapt. But Squad was locked to one environment — the CLI. Copy the `.squad/` folder to VS Code? Agents couldn't see it. Run on a laptop without SSH agent configured? The spinner hid the passphrase prompt.
 
 v0.4.0 is about breaking those walls.
 

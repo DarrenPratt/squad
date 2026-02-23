@@ -20,7 +20,7 @@ We proved what intuition suggested: **Squad works identically on VS Code as it d
 - **Sub-agent spawning:** VS Code's `runSubagent` tool maps 1:1 to CLI's `task` tool. Agents spawn synchronously individually, but multiple agents in the same turn run in parallel — functionally equivalent to CLI's `mode: "background"` with concurrent execution.
 - **Model selection:** VS Code's Phase 1 MVP accepts the session model. Phase 2 (v0.5.0) will support custom agent frontmatter for static per-agent routing. Cost optimization deferred but not blocked.
 - **File discovery:** `.github/agents/squad.agent.md` auto-discovers and hot-reloads on VS Code. No restart needed.
-- **`.ai-team/` access:** Full read/write support, workspace-scoped. First write may prompt for approval (VS Code security); subsequent writes automatic.
+- **`.squad/` access:** Full read/write support, workspace-scoped. First write may prompt for approval (VS Code security); subsequent writes automatic.
 - **SQL tool:** Not available on VS Code. This is documented; workflows should detect platform and adapt.
 
 **Workarounds documented:** `runSubagent` has no `model` or `background` parameters. Workaround: spawn multiple subagents in one turn for parallelism; batch Scribe last (tolerable cost since Scribe is Haiku-tier work).
@@ -38,7 +38,7 @@ We published the first production compatibility matrix covering CLI, VS Code, Je
 | Sub-agent spawning | ✅ | ✅ | ⚠️ | ❌ |
 | Per-spawn model selection | ✅ | ⚠️ | ? | ? |
 | Background/async execution | ✅ | ⚠️ | ? | ? |
-| `.ai-team/` file access | ✅ | ✅ | ? | ? |
+| `.squad/` file access | ✅ | ✅ | ? | ? |
 | SQL tool | ✅ | ❌ | ❌ | ❌ |
 
 **Also documented:** Platform adaptation guide for Squad developers. Coordinator instructions for platform detection (CLI mode vs VS Code mode vs fallback mode).
@@ -70,7 +70,7 @@ Coordinator:
 3. Extracts new milestones, relays to user in real-time
 4. Falls back to "still working" if no milestones (graceful degradation)
 
-**For v0.4.0:** Coordinator polling loop + `.ai-team/skills/progress-signals/SKILL.md` documentation.
+**For v0.4.0:** Coordinator polling loop + `.squad/skills/progress-signals/SKILL.md` documentation.
 
 **For v0.5.0+:** Customizable polling cadence, emoji matching to agent persona, milestone filtering for quiet mode.
 
