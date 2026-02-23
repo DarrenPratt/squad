@@ -254,6 +254,8 @@ export interface WelcomeData {
   description: string;
   agents: Array<{ name: string; role: string; emoji: string }>;
   focus: string | null;
+  /** True on the very first launch after `squad init`. */
+  isFirstRun: boolean;
 }
 
 /** Load welcome screen data from .squad/ directory. */
@@ -280,7 +282,15 @@ export function loadWelcomeData(teamRoot: string): WelcomeData | null {
       focus = focusMatch?.[1]?.trim() ?? null;
     }
 
-    return { projectName, description, agents, focus };
+    // Detect and consume first-run marker from `squad init`
+    const firstRunPath = path.join(teamRoot, '.squad', '.first-run');
+    let isFirstRun = false;
+    if (fs.existsSync(firstRunPath)) {
+      isFirstRun = true;
+      try { fs.unlinkSync(firstRunPath); } catch { /* non-fatal */ }
+    }
+
+    return { projectName, description, agents, focus, isFirstRun };
   } catch (err) {
     debugLog('loadWelcomeData failed:', err);
     return null;

@@ -131,7 +131,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       if (!onDispatch) {
         setMessages(prev => [...prev, {
           role: 'system' as const,
-          content: '🔌 SDK not connected. Check your setup.',
+          content: 'SDK not connected. Check your setup.',
           timestamp: new Date(),
         }]);
         return;
@@ -163,6 +163,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const bannerReady = titleRevealed.length >= 7; // '◆ SQUAD'.length
   const bannerDim = useFadeIn(bannerReady, 300);
 
+  // Pick a lead agent name for the first-run guided prompt
+  const leadAgent = welcome?.agents[0]?.name ?? 'Keaton';
+
   return (
     <Box flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
@@ -188,9 +191,17 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           <Text dimColor>{"  Run 'squad init' to get started"}</Text>
         ) : null}
         {bannerReady && !compact && <Text>{' '}</Text>}
-        {bannerReady && wide && welcome?.focus ? <Text dimColor>📍 {welcome.focus}</Text> : null}
+        {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
         {bannerReady && <Text dimColor>{compact ? '/help · Ctrl+C exit' : '↑↓ history · @Agent to direct · /help · Ctrl+C exit'}</Text>}
       </Box>
+
+      {bannerReady && welcome?.isFirstRun ? (
+        <Box paddingX={1} paddingY={1}>
+          <Text color={noColor ? undefined : 'green'} bold>Your squad is assembled.</Text>
+          <Text> Try: </Text>
+          <Text bold color={noColor ? undefined : 'cyan'}>@{leadAgent} what should we build first?</Text>
+        </Box>
+      ) : null}
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />
       <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} agentActivities={agentActivities} />

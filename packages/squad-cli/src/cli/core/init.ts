@@ -14,6 +14,51 @@ import { detectProjectType } from './project-type.js';
 import { getPackageVersion, stampVersion } from './version.js';
 import { generateProjectWorkflowStub, PROJECT_TYPE_SENSITIVE_WORKFLOWS } from './workflows.js';
 
+const CYAN = '\x1b[36m';
+
+/** True when animations should be suppressed (NO_COLOR, dumb term, non-TTY). */
+export function isInitNoColor(): boolean {
+  return (
+    (process.env['NO_COLOR'] != null && process.env['NO_COLOR'] !== '') ||
+    process.env['TERM'] === 'dumb' ||
+    !process.stdout.isTTY
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Typewriter effect — falls back to instant print when animations disabled. */
+export async function typewrite(text: string, charMs: number = 30): Promise<void> {
+  if (isInitNoColor()) {
+    process.stdout.write(text + '\n');
+    return;
+  }
+  for (const char of text) {
+    process.stdout.write(char);
+    await sleep(charMs);
+  }
+  process.stdout.write('\n');
+}
+
+/** Staggered list reveal — each line appears with a short delay. */
+async function revealLines(lines: string[], delayMs: number = 100): Promise<void> {
+  for (const line of lines) {
+    if (!isInitNoColor()) await sleep(delayMs);
+    console.log(line);
+  }
+}
+
+/** The structures that init creates, for the ceremony summary. */
+const INIT_LANDMARKS = [
+  { emoji: '📁', label: 'Team workspace' },
+  { emoji: '📋', label: 'Skills & ceremonies' },
+  { emoji: '🔧', label: 'Workflows & CI' },
+  { emoji: '🧠', label: 'Identity & wisdom' },
+  { emoji: '🤖', label: 'Copilot agent prompt' },
+];
+
 /**
  * Show deprecation warning for .ai-team/ directory
  */
@@ -61,6 +106,10 @@ async function writeWorkflowFile(file: string, srcPath: string, destPath: string
  */
 export async function runInit(dest: string): Promise<void> {
   const version = getPackageVersion();
+
+  console.log();
+  await typewrite(`${DIM}Let's build your team.${RESET}`, 25);
+  console.log();
 
   // Detect project type
   const projectType = detectProjectType(dest);
@@ -293,16 +342,29 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
     }
   }
 
-  // Final output
+  // Write first-run marker so the shell can show a guided welcome
+  const firstRunMarker = path.join(squadInfo.path, '.first-run');
+  if (!fsSync.existsSync(firstRunMarker)) {
+    await fs.writeFile(firstRunMarker, new Date().toISOString() + '\n');
+  }
+
+  // ── Celebration ceremony ──────────────────────────────────────────
   console.log();
-  console.log(`${BOLD}Squad is ready.${RESET}`);
+  await typewrite(`${CYAN}${BOLD}◆ SQUAD${RESET}`, 40);
+  if (!isInitNoColor()) await sleep(200);
   console.log();
+
+  await revealLines(
+    INIT_LANDMARKS.map(l => `  ${l.emoji}  ${l.label}`),
+    100,
+  );
+
+  if (!isInitNoColor()) await sleep(300);
+  console.log();
+  console.log(`${GREEN}${BOLD}Your team is ready.${RESET} Run ${CYAN}${BOLD}squad${RESET} to start.`);
+  console.log();
+
   if (squadInfo.isLegacy) {
     showDeprecationWarning();
   }
-  console.log(`Next steps:`);
-  console.log(`  1. Open Copilot:  ${DIM}copilot${RESET}`);
-  console.log(`  2. Type ${BOLD}/agent${RESET} (CLI) or ${BOLD}/agents${RESET} (VS Code) and select ${BOLD}Squad${RESET}`);
-  console.log(`  3. Tell it what you're building`);
-  console.log();
 }
