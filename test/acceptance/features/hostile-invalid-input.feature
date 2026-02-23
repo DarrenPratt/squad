@@ -1,9 +1,9 @@
 Feature: Hostile — Invalid input handling
 
-  Scenario: Empty string argument launches shell and exits in non-TTY
+  Scenario: Empty string argument shows help and exits cleanly
     When I run hostile command with empty argument
     Then the process does not crash
-    And the exit code is not null
+    And the exit code is 0
 
   Scenario: Command with control characters
     When I run hostile command with control characters
@@ -19,7 +19,7 @@ Feature: Hostile — Invalid input handling
     When I run hostile command with null bytes
     Then the null byte error is caught gracefully
 
-  Scenario: Command with only whitespace launches shell and exits in non-TTY
+  Scenario: Command with only whitespace shows help and exits cleanly
     When I run hostile command with whitespace-only argument
     Then the process does not crash
-    And the exit code is not null
+    And the exit code is 0

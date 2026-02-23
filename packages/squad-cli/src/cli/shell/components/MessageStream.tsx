@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
+import { ThinkingIndicator } from './ThinkingIndicator.js';
 import type { ShellMessage, AgentSession } from '../types.js';
 
 interface MessageStreamProps {
@@ -8,60 +9,9 @@ interface MessageStreamProps {
   agents?: AgentSession[];
   streamingContent?: { agentName: string; content: string } | null;
   processing?: boolean;
+  activityHint?: string;
   maxVisible?: number;
 }
-
-type ThinkingPhase = 'connecting' | 'routing' | 'streaming';
-
-const PHASE_LABELS: Record<ThinkingPhase, string> = {
-  connecting: 'Connecting',
-  routing: 'Routing',
-  streaming: 'Streaming',
-};
-
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-
-/** Color cycles through as time passes — feels alive. */
-function spinnerColor(elapsed: number): string {
-  if (elapsed < 3) return 'cyan';
-  if (elapsed < 8) return 'yellow';
-  return 'magenta';
-}
-
-/** Animated spinner with elapsed time, phase transitions, and color cycling. */
-const ThinkingIndicator: React.FC<{ label: string; hasContent: boolean }> = ({ label, hasContent }) => {
-  const [frame, setFrame] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(Date.now());
-
-  // Phase transitions: connecting → routing → streaming
-  const phase: ThinkingPhase = hasContent ? 'streaming' : elapsed < 1 ? 'connecting' : 'routing';
-
-  useEffect(() => {
-    startRef.current = Date.now();
-    setElapsed(0);
-    setFrame(0);
-  }, [label]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setFrame(f => (f + 1) % SPINNER_FRAMES.length);
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 80);
-    return () => clearInterval(timer);
-  }, []);
-
-  const color = spinnerColor(elapsed);
-  const elapsedStr = elapsed > 0 ? ` (${elapsed}s)` : '';
-
-  return (
-    <Box gap={1}>
-      <Text color={color}>{SPINNER_FRAMES[frame] ?? '⠋'}</Text>
-      <Text color={color}>{PHASE_LABELS[phase]}</Text>
-      <Text dimColor>— {label}{elapsedStr}</Text>
-    </Box>
-  );
-};
 
 /** Format elapsed seconds for response timestamps. */
 function formatDuration(start: Date, end: Date): string {
@@ -75,20 +25,39 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
   agents,
   streamingContent,
   processing = false,
+  activityHint,
   maxVisible = 50,
 }) => {
   const visible = messages.slice(-maxVisible);
   const roleMap = new Map((agents ?? []).map(a => [a.name, a.role]));
 
-  // Determine thinking label from last user message when waiting
-  const getThinkingLabel = (): string => {
+  // Elapsed time tracking for the ThinkingIndicator
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const processingStartRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (processing) {
+      processingStartRef.current = Date.now();
+      setElapsedMs(0);
+      const timer = setInterval(() => {
+        setElapsedMs(Date.now() - processingStartRef.current);
+      }, 200);
+      return () => clearInterval(timer);
+    } else {
+      setElapsedMs(0);
+    }
+  }, [processing]);
+
+  // Build activity hint: prefer explicit hint, then infer from agent @mention
+  const resolvedHint = (() => {
+    if (activityHint) return activityHint;
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     if (lastUser) {
       const atMatch = lastUser.content.match(/^@(\w+)/);
       if (atMatch?.[1]) return `${atMatch[1]} is thinking...`;
     }
-    return 'Routing your request...';
-  };
+    return undefined;
+  })();
 
   // Compute response duration: time from previous user message to this agent message
   const getResponseDuration = (index: number): string | null => {
@@ -153,12 +122,20 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
 
       {/* Thinking indicator — shown when processing but no content yet */}
       {processing && !streamingContent?.content && (
-        <ThinkingIndicator label={getThinkingLabel()} hasContent={false} />
+        <ThinkingIndicator
+          isThinking={true}
+          elapsedMs={elapsedMs}
+          activityHint={resolvedHint}
+        />
       )}
 
-      {/* Thinking indicator alongside streaming — shows elapsed while content flows */}
+      {/* Streaming status — shows elapsed while content flows */}
       {processing && streamingContent?.content && (
-        <ThinkingIndicator label={`${streamingContent.agentName} streaming`} hasContent={true} />
+        <ThinkingIndicator
+          isThinking={true}
+          elapsedMs={elapsedMs}
+          activityHint={`${streamingContent.agentName} streaming`}
+        />
       )}
     </Box>
   );

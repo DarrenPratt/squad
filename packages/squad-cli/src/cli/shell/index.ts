@@ -60,7 +60,7 @@ export async function runShell(): Promise<void> {
   const teamRoot = process.cwd();
 
   // Initialize OpenTelemetry if endpoint is configured (e.g. Aspire dashboard)
-  const telemetry = initSquadTelemetry({ serviceName: 'squad-cli' });
+  const telemetry = initSquadTelemetry({ serviceName: 'squad-cli', mode: 'cli' });
   if (telemetry.tracing || telemetry.metrics) {
     console.error('🔭 Telemetry active — exporting to ' + process.env['OTEL_EXPORTER_OTLP_ENDPOINT']);
   }
@@ -170,6 +170,7 @@ export async function runShell(): Promise<void> {
 
     registry.updateStatus(agentName, 'streaming');
     shellApi?.refreshAgents();
+    shellApi?.setActivityHint(`${agentName} is connecting...`);
 
     let accumulated = '';
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
@@ -178,9 +179,28 @@ export async function runShell(): Promise<void> {
       if (!delta) return;
       accumulated += delta;
       shellApi?.setStreamingContent({ agentName, content: accumulated });
+      shellApi?.setActivityHint(undefined); // Clear hint once content is flowing
     };
 
     session.on('message_delta', onDelta);
+    // Listen for tool/activity events to show Copilot-style hints
+    const onToolCall = (event: { type: string; [key: string]: unknown }): void => {
+      const toolName = event['toolName'] ?? event['name'] ?? event['tool'];
+      if (typeof toolName === 'string') {
+        const hintMap: Record<string, string> = {
+          'read_file': 'Reading file...',
+          'write_file': 'Writing file...',
+          'edit_file': 'Editing file...',
+          'run_command': 'Running command...',
+          'search': 'Searching codebase...',
+          'spawn_agent': `Spawning specialist...`,
+          'analyze': 'Analyzing dependencies...',
+        };
+        const hint = hintMap[toolName] ?? `Using ${toolName}...`;
+        shellApi?.setActivityHint(hint);
+      }
+    };
+    try { session.on('tool_call', onToolCall); } catch { /* event may not exist */ }
     try {
       const fallback = await awaitStreamedResponse(session, message);
       debugLog('agent dispatch:', agentName, 'accumulated length', accumulated.length, 'fallback length', fallback.length);
@@ -189,7 +209,9 @@ export async function runShell(): Promise<void> {
       }
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
+      try { session.off('tool_call', onToolCall); } catch { /* ignore */ }
       shellApi?.setStreamingContent(null);
+      shellApi?.setActivityHint(undefined);
       if (accumulated) {
         shellApi?.addMessage({
           role: 'agent',
@@ -206,6 +228,7 @@ export async function runShell(): Promise<void> {
   /** Send a message through the coordinator and route based on response. */
   async function dispatchToCoordinator(message: string): Promise<void> {
     debugLog('dispatchToCoordinator: sending message', message.slice(0, 120));
+    shellApi?.setActivityHint('Routing your request...');
     if (!coordinatorSession) {
       const systemPrompt = buildCoordinatorPrompt({ teamRoot });
       coordinatorSession = await client.createSession({

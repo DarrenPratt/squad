@@ -40,7 +40,17 @@ import { VERSION } from '@bradygaster/squad-sdk';
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const hasGlobal = args.includes('--global');
-  const cmd = args[0];
+  const rawCmd = args[0];
+  const cmd = rawCmd?.trim() || undefined;
+
+  // Empty or whitespace-only args should show help, not launch shell
+  if (rawCmd !== undefined && !cmd) {
+    console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
+    console.log(`Add an AI agent team to any project\n`);
+    console.log(`Usage: squad [command] [options]`);
+    console.log(`\nRun 'squad help' for full command list.\n`);
+    return;
+  }
 
   // --version / -v
   if (cmd === '--version' || cmd === '-v') {

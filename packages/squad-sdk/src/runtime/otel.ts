@@ -29,6 +29,8 @@ export interface OTelConfig {
   serviceName?: string;
   /** Enable debug diagnostics */
   debug?: boolean;
+  /** Execution mode tag — added as `squad.mode` resource attribute (e.g. 'cli', 'copilot-agent') */
+  mode?: string;
 }
 
 // ============================================================================
@@ -57,10 +59,14 @@ function buildResource(config?: OTelConfig): InstanceType<typeof Resource> {
     // package.json not resolvable — use fallback
   }
 
-  return new Resource({
+  const attrs: Record<string, string> = {
     'service.name': config?.serviceName ?? 'squad-sdk',
     'squad.version': version,
-  });
+  };
+  if (config?.mode) {
+    attrs['squad.mode'] = config.mode;
+  }
+  return new Resource(attrs);
 }
 
 function ensureSDK(config?: OTelConfig): void {

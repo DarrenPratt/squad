@@ -108,3 +108,22 @@ export function initSquadTelemetry(options: SquadTelemetryOptions = {}): SquadTe
     },
   };
 }
+
+/**
+ * Convenience wrapper for Copilot agent-mode telemetry.
+ *
+ * Pre-configures `serviceName` to `'squad-copilot-agent'` and
+ * `mode` to `'copilot-agent'` so the two surfaces (CLI vs agent)
+ * are distinguishable in dashboards and trace queries.
+ *
+ * Call this at agent-mode startup; call `handle.shutdown()` on exit.
+ *
+ * @param options - Additional overrides (endpoint, eventBus, etc.).
+ */
+export function initAgentModeTelemetry(options: Omit<SquadTelemetryOptions, 'serviceName' | 'mode'> = {}): SquadTelemetryHandle {
+  return initSquadTelemetry({
+    ...options,
+    serviceName: 'squad-copilot-agent',
+    mode: 'copilot-agent',
+  });
+}

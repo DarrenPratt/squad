@@ -22,6 +22,7 @@ import type { ShellMessage, AgentSession } from '../types.js';
 export interface ShellApi {
   addMessage: (msg: ShellMessage) => void;
   setStreamingContent: (content: { agentName: string; content: string } | null) => void;
+  setActivityHint: (hint: string | undefined) => void;
   refreshAgents: () => void;
 }
 
@@ -42,6 +43,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
   const [streamingContent, setStreamingContent] = useState<{ agentName: string; content: string } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [activityHint, setActivityHint] = useState<string | undefined>(undefined);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const messagesRef = useRef<ShellMessage[]>([]);
 
@@ -60,8 +62,10 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       addMessage: (msg: ShellMessage) => {
         setMessages(prev => [...prev, msg]);
         setStreamingContent(null);
+        setActivityHint(undefined);
       },
       setStreamingContent,
+      setActivityHint,
       refreshAgents: () => {
         setAgents([...registry.getAll()]);
       },
@@ -162,7 +166,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       </Box>
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />
-      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} />
+      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} />
       <InputPrompt onSubmit={handleSubmit} disabled={processing} />
     </Box>
   );

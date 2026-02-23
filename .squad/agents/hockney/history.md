@@ -241,3 +241,16 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - **Bug confirmed**: When sendAndWait returns undefined (no `data.content`) AND no deltas fire, accumulated is empty string. `parseCoordinatorResponse('')` returns `{ type: 'direct', directAnswer: '' }` — the empty coordinator response Brady sees. The pipeline silently swallows the failure.
 - **Missing feature**: SQUAD_DEBUG env var for diagnostic logging is not implemented anywhere in the dispatch pipeline. Marked as it.todo().
 - Test count: 29→42 (41 pass, 1 todo). All green.
+
+### 2026-02-23: P0 Bug Fixes — Issue #333 (PR #351)
+**Status:** Complete — 2 bugs addressed, 7 regression tests added.
+
+**BUG-2 (P2 → fixed):** Empty/whitespace CLI args (`squad ""`, `squad "   "`) now show brief help and exit 0. Previously, empty string args fell through to `runShell()` (non-TTY = exit code 1), and whitespace args hit "Unknown command" error. Fix: trim `args[0]` early, detect empty/whitespace as distinct from no-args, show help instead of shell.
+
+**BUG-1 (P1 → verified, not a code bug):** `--version` bare semver output is intentional per Cheritto's P0 UX fix (PR #349, Marquez audit). Updated `version.feature` to stop asserting `"squad"` prefix — it conflicted with the `ux-gates.test.ts` assertion that version does NOT start with "squad".
+
+**Nate's accessibility audit:** Error remediation hints confirmed present — unknown commands show both `squad help` and `squad doctor` hints (covered by regression tests). Nate's audit file no longer in decisions inbox (likely addressed by Cheritto in #329).
+
+**Test results:** 7/7 new regression tests pass. 59/59 acceptance tests pass. 2485/2494 total (3 pre-existing repl-ux failures unrelated — AgentPanel empty-state rendering changed).
+
+**Key pattern:** When `process.argv.slice(2)[0]` is empty string, JS treats it as falsy — same code path as no-args. Must distinguish `undefined` (no args → shell) from `""` (empty arg → help). The `rawCmd !== undefined && !cmd` guard handles this.

@@ -52,6 +52,13 @@
   - **Key diagnostic technique:** Standalone `tmp-otel-diag.mjs` script creating a single span + flush immediately revealed the 401. This should be the first step whenever "telemetry not appearing" is reported.
   - Code review of `client.ts` span instrumentation: all spans properly `.end()`'d in `finally` blocks; tracer proxy pattern works correctly (module-level `trace.getTracer()` delegates to whatever provider is registered later by `NodeSDK.start()`).
   - 2424 tests passing across 89 files after fix.
+- **Dual-mode OTel telemetry (Issue #343, PR #352):**
+  - Added `mode` field to `OTelConfig` — written as `squad.mode` resource attribute in `buildResource()`
+  - Created `initAgentModeTelemetry()` convenience in `otel-init.ts` — pre-sets `serviceName: 'squad-copilot-agent'` and `mode: 'copilot-agent'`
+  - `runShell()` now passes `mode: 'cli'` to `initSquadTelemetry`, so CLI spans are tagged
+  - Exported `initAgentModeTelemetry` from SDK barrel (`index.ts`)
+  - Added 3 tests in `test/otel-export.test.ts`: mode attribute on spans, dual-mode distinguishability, handle validity
+  - No dedicated Copilot agent-mode entry point exists yet — `initAgentModeTelemetry()` is ready for when it's created
 
 ---
 

@@ -18,6 +18,7 @@ import { render } from 'ink-testing-library';
 import { MessageStream } from '../packages/squad-cli/src/cli/shell/components/MessageStream.js';
 import { AgentPanel } from '../packages/squad-cli/src/cli/shell/components/AgentPanel.js';
 import { InputPrompt } from '../packages/squad-cli/src/cli/shell/components/InputPrompt.js';
+import { ThinkingIndicator, THINKING_PHRASES } from '../packages/squad-cli/src/cli/shell/components/ThinkingIndicator.js';
 import type { ShellMessage, AgentSession } from '../packages/squad-cli/src/cli/shell/types.js';
 
 // ============================================================================
@@ -73,7 +74,7 @@ describe('ThinkingIndicator visibility', () => {
     expect(frame).toContain('thinking');
   });
 
-  it('shows generic routing label when no @agent in message', () => {
+  it('shows thinking phrase when no @agent in message', () => {
     const { lastFrame } = render(
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'fix the bug' })],
@@ -82,7 +83,9 @@ describe('ThinkingIndicator visibility', () => {
       })
     );
     const frame = lastFrame()!;
-    expect(frame).toContain('Routing');
+    // Now shows rotating thinking phrases instead of static "Routing"
+    const hasPhrase = THINKING_PHRASES.some(p => frame.includes(p));
+    expect(hasPhrase).toBe(true);
   });
 
   it('hides spinner when streaming content appears', () => {
@@ -610,5 +613,153 @@ describe('Never feels dead', () => {
       expect(frame, `Phase ${i + 1} must not be null`).toBeTruthy();
       expect(frame!.trim().length, `Phase ${i + 1} must have visible content`).toBeGreaterThan(0);
     }
+  });
+});
+
+// ============================================================================
+// 7. ThinkingIndicator component (standalone)
+// ============================================================================
+
+describe('ThinkingIndicator component', () => {
+  it('renders nothing when isThinking=false', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, { isThinking: false, elapsedMs: 0 })
+    );
+    expect(lastFrame()).toBe('');
+  });
+
+  it('renders spinner when isThinking=true', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, { isThinking: true, elapsedMs: 0 })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
+  });
+
+  it('shows a thinking phrase from the THINKING_PHRASES list', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, { isThinking: true, elapsedMs: 0 })
+    );
+    const frame = lastFrame()!;
+    const hasPhrase = THINKING_PHRASES.some(p => frame.includes(p));
+    expect(hasPhrase).toBe(true);
+  });
+
+  it('shows elapsed time when > 0', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, { isThinking: true, elapsedMs: 12000 })
+    );
+    expect(lastFrame()!).toContain('12s');
+  });
+
+  it('does not show elapsed time when < 1s', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, { isThinking: true, elapsedMs: 500 })
+    );
+    expect(lastFrame()!).not.toMatch(/\d+s/);
+  });
+
+  it('activity hint takes priority over thinking phrases', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, {
+        isThinking: true,
+        elapsedMs: 5000,
+        activityHint: 'Reading file...',
+      })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toContain('Reading file...');
+    // Should NOT show any thinking phrase when hint is active
+    const hasPhrase = THINKING_PHRASES.some(p => frame.includes(p));
+    expect(hasPhrase).toBe(false);
+  });
+
+  it('activity hint shows elapsed time alongside', () => {
+    const { lastFrame } = render(
+      h(ThinkingIndicator, {
+        isThinking: true,
+        elapsedMs: 8000,
+        activityHint: 'Spawning specialist...',
+      })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toContain('Spawning specialist...');
+    expect(frame).toContain('8s');
+  });
+
+  it('THINKING_PHRASES has at least 8 entries for variety', () => {
+    expect(THINKING_PHRASES.length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+// ============================================================================
+// 8. ThinkingIndicator integration with MessageStream
+// ============================================================================
+
+describe('ThinkingIndicator integration with MessageStream', () => {
+  it('shows thinking phrase when processing with no @mention', () => {
+    const { lastFrame } = render(
+      h(MessageStream, {
+        messages: [makeMessage({ role: 'user', content: 'fix the bug' })],
+        processing: true,
+        streamingContent: null,
+      })
+    );
+    const frame = lastFrame()!;
+    // Should show spinner and a thinking phrase
+    expect(frame).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
+    const hasPhrase = THINKING_PHRASES.some(p => frame.includes(p));
+    expect(hasPhrase).toBe(true);
+  });
+
+  it('shows agent-specific hint when @mention present', () => {
+    const { lastFrame } = render(
+      h(MessageStream, {
+        messages: [makeMessage({ role: 'user', content: '@Kovash fix the bug' })],
+        processing: true,
+        streamingContent: null,
+      })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toContain('Kovash');
+    expect(frame).toContain('thinking');
+  });
+
+  it('shows custom activityHint when provided', () => {
+    const { lastFrame } = render(
+      h(MessageStream, {
+        messages: [makeMessage({ role: 'user', content: 'hello' })],
+        processing: true,
+        streamingContent: null,
+        activityHint: 'Analyzing dependencies...',
+      })
+    );
+    expect(lastFrame()!).toContain('Analyzing dependencies...');
+  });
+
+  it('activityHint overrides @mention hint', () => {
+    const { lastFrame } = render(
+      h(MessageStream, {
+        messages: [makeMessage({ role: 'user', content: '@Kovash fix it' })],
+        processing: true,
+        streamingContent: null,
+        activityHint: 'Reading file...',
+      })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toContain('Reading file...');
+  });
+
+  it('streaming phase shows agent name + streaming hint', () => {
+    const { lastFrame } = render(
+      h(MessageStream, {
+        messages: [makeMessage({ role: 'user', content: 'hello' })],
+        processing: true,
+        streamingContent: { agentName: 'Kovash', content: 'Working on it...' },
+      })
+    );
+    const frame = lastFrame()!;
+    expect(frame).toContain('Working on it...');
+    expect(frame).toContain('streaming');
   });
 });

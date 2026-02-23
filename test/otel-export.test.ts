@@ -17,6 +17,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { getTracer, shutdownOTel } from '@bradygaster/squad-sdk/runtime/otel';
+import { initAgentModeTelemetry } from '@bradygaster/squad-sdk';
 
 // ---------------------------------------------------------------------------
 // Test infrastructure — in-memory exporter
@@ -116,5 +117,63 @@ describe('OTel Export Pipeline', () => {
     await expect(shutdownOTel()).resolves.toBeUndefined();
     // Safe to call again
     await expect(shutdownOTel()).resolves.toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dual-mode telemetry tests (Issue #343)
+// ---------------------------------------------------------------------------
+
+describe('Dual-mode OTel telemetry', () => {
+  beforeEach(() => {
+    installTestProvider();
+  });
+
+  afterEach(async () => {
+    try { await shutdownOTel(); } catch { /* cleanup */ }
+    teardownTestProvider();
+  });
+
+  it('spans carry squad.mode attribute when set via getTracer', () => {
+    const tracer = getTracer('squad-cli');
+    const span = tracer.startSpan('cli.operation');
+    span.setAttribute('squad.mode', 'cli');
+    span.end();
+
+    const spans = memExporter.getFinishedSpans();
+    expect(spans.length).toBe(1);
+    expect(spans[0].attributes['squad.mode']).toBe('cli');
+  });
+
+  it('copilot-agent mode spans are distinguishable from cli mode spans', () => {
+    const cliTracer = getTracer('squad-cli');
+    const agentTracer = getTracer('squad-copilot-agent');
+
+    const cliSpan = cliTracer.startSpan('cli.operation');
+    cliSpan.setAttribute('squad.mode', 'cli');
+    cliSpan.end();
+
+    const agentSpan = agentTracer.startSpan('agent.operation');
+    agentSpan.setAttribute('squad.mode', 'copilot-agent');
+    agentSpan.end();
+
+    const spans = memExporter.getFinishedSpans();
+    expect(spans.length).toBe(2);
+
+    const cliResult = spans.find(s => s.attributes['squad.mode'] === 'cli');
+    const agentResult = spans.find(s => s.attributes['squad.mode'] === 'copilot-agent');
+    expect(cliResult).toBeDefined();
+    expect(agentResult).toBeDefined();
+    expect(cliResult!.name).toBe('cli.operation');
+    expect(agentResult!.name).toBe('agent.operation');
+  });
+
+  it('initAgentModeTelemetry returns a valid handle', () => {
+    // Without OTEL_EXPORTER_OTLP_ENDPOINT, tracing/metrics remain inactive (no-op)
+    const handle = initAgentModeTelemetry();
+    expect(handle).toBeDefined();
+    expect(typeof handle.shutdown).toBe('function');
+    expect(typeof handle.tracing).toBe('boolean');
+    expect(typeof handle.metrics).toBe('boolean');
   });
 });
