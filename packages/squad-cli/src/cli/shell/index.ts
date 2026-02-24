@@ -185,6 +185,7 @@ export async function runShell(): Promise<void> {
     },
     onError: (agentName: string, error: Error) => {
       debugLog(`StreamBridge error for ${agentName}:`, error);
+      streamBuffers.delete(agentName);
       const friendly = error.message.replace(/^Error:\s*/i, '');
       shellApi?.addMessage({
         role: 'system',
@@ -376,6 +377,7 @@ export async function runShell(): Promise<void> {
       // Evict dead session so next attempt creates a fresh one
       debugLog('dispatchToAgent: evicting dead session for', agentName, err);
       agentSessions.delete(agentName);
+      streamBuffers.delete(agentName);
       throw err;
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
@@ -460,6 +462,7 @@ export async function runShell(): Promise<void> {
       // Evict dead coordinator session so next attempt creates a fresh one
       debugLog('dispatchToCoordinator: evicting dead coordinator session', err);
       coordinatorSession = null;
+      streamBuffers.delete('coordinator');
       throw err;
     } finally {
       try { 
@@ -521,6 +524,7 @@ export async function runShell(): Promise<void> {
     }
 
     // Clear streaming state
+    streamBuffers.clear();
     shellApi?.setStreamingContent(null);
     shellApi?.setActivityHint(undefined);
     shellApi?.addMessage({
