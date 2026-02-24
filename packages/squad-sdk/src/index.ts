@@ -35,6 +35,7 @@ export type { SquadTelemetryOptions, SquadTelemetryHandle } from './runtime/otel
 export { SquadObserver, classifyFile } from './runtime/squad-observer.js';
 export type { SquadFileChange, SquadFileCategory, SquadObserverConfig } from './runtime/squad-observer.js';
 
+export { safeTimestamp } from './utils/safe-timestamp.js';
 export * from './marketplace/index.js';
 export * from './build/index.js';
 export * from './sharing/index.js';
