@@ -27,12 +27,20 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const [spinFrame, setSpinFrame] = useState(0);
   const bufferRef = useRef('');
   const wasDisabledRef = useRef(disabled);
+  const pendingInputRef = useRef<string[]>([]);
 
   // When transitioning from disabled → enabled, restore buffered input
   useEffect(() => {
-    if (wasDisabledRef.current && !disabled && bufferRef.current) {
-      setValue(bufferRef.current);
-      bufferRef.current = '';
+    if (wasDisabledRef.current && !disabled) {
+      // Drain pending input queue first (fast typing during transition)
+      const pending = pendingInputRef.current.join('');
+      pendingInputRef.current = [];
+      
+      const combined = bufferRef.current + pending;
+      if (combined) {
+        setValue(combined);
+        bufferRef.current = '';
+      }
     }
     wasDisabledRef.current = disabled;
   }, [disabled]);
@@ -57,8 +65,16 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
         return;
       }
       if (input) {
+        // Queue input to catch race during disabled→enabled transition
+        pendingInputRef.current.push(input);
         bufferRef.current += input;
       }
+      return;
+    }
+    
+    // Race guard: if we just re-enabled but haven't drained queue yet, queue this too
+    if (wasDisabledRef.current && pendingInputRef.current.length > 0) {
+      pendingInputRef.current.push(input || '');
       return;
     }
     

@@ -175,17 +175,43 @@ export async function runShell(): Promise<void> {
   async function awaitStreamedResponse(session: SquadSession, prompt: string): Promise<string> {
     if (session.sendAndWait) {
       debugLog('awaitStreamedResponse: using sendAndWait');
-      const result = await session.sendAndWait({ prompt }, TIMEOUTS.SESSION_RESPONSE_MS);
-      debugLog('awaitStreamedResponse: sendAndWait returned', {
-        type: typeof result,
-        keys: result ? Object.keys(result as Record<string, unknown>) : [],
-        hasData: !!(result as Record<string, unknown> | undefined)?.['data'],
-      });
-      // Return full response content as fallback for when deltas weren't captured
-      const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
-      const content = typeof data?.['content'] === 'string' ? data['content'] as string : '';
-      debugLog('awaitStreamedResponse: fallback content length', content.length);
-      return content;
+      
+      // Progress indicator for long operations (shows after 30s, updates every 30s)
+      const startTime = Date.now();
+      let progressInterval: NodeJS.Timeout | undefined;
+      
+      const updateProgress = (): void => {
+        const elapsedMs = Date.now() - startTime;
+        const elapsedSec = Math.floor(elapsedMs / 1000);
+        const minutes = Math.floor(elapsedSec / 60);
+        const seconds = elapsedSec % 60;
+        const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+        shellApi?.setActivityHint(`Still working... (${timeStr} elapsed)`);
+      };
+      
+      // Start progress updates after 30s
+      const progressTimer = setTimeout(() => {
+        updateProgress(); // Show immediately at 30s
+        progressInterval = setInterval(updateProgress, 30000); // Update every 30s after
+      }, 30000);
+      
+      try {
+        const result = await session.sendAndWait({ prompt }, TIMEOUTS.SESSION_RESPONSE_MS);
+        debugLog('awaitStreamedResponse: sendAndWait returned', {
+          type: typeof result,
+          keys: result ? Object.keys(result as Record<string, unknown>) : [],
+          hasData: !!(result as Record<string, unknown> | undefined)?.['data'],
+        });
+        // Return full response content as fallback for when deltas weren't captured
+        const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+        const content = typeof data?.['content'] === 'string' ? data['content'] as string : '';
+        debugLog('awaitStreamedResponse: fallback content length', content.length);
+        return content;
+      } finally {
+        // Clean up progress timers
+        clearTimeout(progressTimer);
+        if (progressInterval) clearInterval(progressInterval);
+      }
     } else {
       const done = new Promise<void>((resolve) => {
         const onEnd = (): void => {
@@ -230,7 +256,18 @@ export async function runShell(): Promise<void> {
     });
   }
 
-  /** Send a message to an agent session and stream the response. */
+  /**
+   * Send a message to an agent session and stream the response.
+   * 
+   * **Streaming architecture:**
+   * 1. Register `message_delta` listener BEFORE sending message (ensures we catch all deltas)
+   * 2. Call `awaitStreamedResponse` which uses `sendAndWait` (blocks until session idle)
+   * 3. Accumulate deltas into `accumulated` via the `onDelta` handler
+   * 4. Fallback to `sendAndWait` result if no deltas were captured (ghost response handling)
+   * 5. Remove listener in finally block to prevent memory leaks
+   * 
+   * Both agent and coordinator dispatch use identical event wiring patterns.
+   */
   async function dispatchToAgent(agentName: string, message: string): Promise<void> {
     debugLog('dispatchToAgent:', agentName, message.slice(0, 120));
     let session = agentSessions.get(agentName);
@@ -324,7 +361,20 @@ export async function runShell(): Promise<void> {
     }
   }
 
-  /** Send a message through the coordinator and route based on response. */
+  /**
+   * Send a message through the coordinator and route based on response.
+   * 
+   * **Streaming architecture:**
+   * 1. Create coordinator session with `streaming: true` config
+   * 2. Register `message_delta` listener BEFORE sending message (ensures we catch all deltas)
+   * 3. Call `awaitStreamedResponse` which uses `sendAndWait` (blocks until session idle)
+   * 4. Accumulate deltas into `accumulated` via the `onDelta` handler
+   * 5. Fallback to `sendAndWait` result if no deltas were captured (ghost response handling)
+   * 6. Remove listener in finally block to prevent memory leaks
+   * 7. Parse accumulated response and route to agents or show direct answer
+   * 
+   * Event wiring is identical to `dispatchToAgent` — both use the same `message_delta` pattern.
+   */
   async function dispatchToCoordinator(message: string): Promise<void> {
     debugLog('dispatchToCoordinator: sending message', message.slice(0, 120));
     if (!coordinatorSession) {
@@ -336,6 +386,11 @@ export async function runShell(): Promise<void> {
         streaming: true,
         systemMessage: { mode: 'append', content: systemPrompt },
         workingDirectory: teamRoot,
+      });
+      debugLog('coordinator session created:', {
+        sessionId: coordinatorSession.sessionId,
+        hasOn: typeof coordinatorSession.on === 'function',
+        hasSendAndWait: typeof coordinatorSession.sendAndWait === 'function',
       });
     }
     shellApi?.setActivityHint('Routing your request...');
@@ -350,22 +405,32 @@ export async function runShell(): Promise<void> {
     };
 
     const activeCoordSession = coordinatorSession;
+    // Wire message_delta listener BEFORE sending the message to ensure we catch all deltas
     activeCoordSession.on('message_delta', onDelta);
+    debugLog('coordinator message_delta listener registered');
     try {
       accumulated = await ghostRetry(async () => {
         accumulated = '';
+        debugLog('coordinator: starting awaitStreamedResponse');
         const fallback = await awaitStreamedResponse(activeCoordSession, message);
         debugLog('coordinator dispatch: accumulated length', accumulated.length, 'fallback length', fallback.length);
-        if (!accumulated && fallback) accumulated = fallback;
+        if (!accumulated && fallback) {
+          debugLog('coordinator: using sendAndWait fallback content');
+          accumulated = fallback;
+        }
         return accumulated;
       }, message);
+      debugLog('coordinator: final accumulated length', accumulated.length);
     } catch (err) {
       // Evict dead coordinator session so next attempt creates a fresh one
       debugLog('dispatchToCoordinator: evicting dead coordinator session', err);
       coordinatorSession = null;
       throw err;
     } finally {
-      try { activeCoordSession.off('message_delta', onDelta); } catch { /* session may not support off */ }
+      try { 
+        activeCoordSession.off('message_delta', onDelta); 
+        debugLog('coordinator message_delta listener removed');
+      } catch { /* session may not support off */ }
       shellApi?.setStreamingContent(null);
     }
 
