@@ -237,3 +237,45 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### 2026-02-27T23:30:00Z: Full Replatform Status Assessment (Brady handoff)
+- **Task:** Brady wants to "get this thing moved over" — comprehensive state of project pre-replatform launch
+- **Codebase State:** 
+  - **Build:** ✅ Clean. Both packages compile with zero errors. `npm run build -w packages/squad-sdk` passes in <3s.
+  - **Tests:** 2944 passing, 1 failing (aspire-integration.test.ts docker pull timeout — environmental, not code). 2 skipped, 1 todo. 51.39s total runtime. Test quality is high (57 test files, 2930+ relevant tests). One flaky Aspire test (docker dependency) not a blocker.
+  - **Packages:** v0.8.5.1 (both SDK and CLI). Clean monorepo with 2 packages, strict TypeScript, ESM-only. SDK exports 18+ subpaths. CLI bin entry points work.
+  - **Git:** HEAD=dev (same as origin/main). 6 recent commits all shipped (samples, docs merge, CLI help, ghost commands, OTel metrics, Ctrl+C cancellation). No open PRs in main. Workspace clean (only .squad/agents/kobayashi/history.md unstaged).
+- **Open Issues Assessment:**
+  - **#542 (GitHub Project Board automation)** — 🟡 P1-ish. Well-designed epic. Hockney assigned. Scope is correct (6 board columns, `squad board` CLI, `sync-board.yml` workflow, iteration support). Blocked on capacity, not blockers. Nice-to-have for Wave E, not critical path to replatform.
+  - **#532 (Dogfood REPL against real repos)** — 🔴 P0 BLOCKER. Waingro + Hockney assigned. This is the ONLY open issue in the backlog. Test against 4 repo types (fresh, existing squadded, monorepo, solo). Must close before replatform launch confidence.
+- **Open PRs Assessment (3 external contributors):**
+  - **#553 (Personal Squad Consult Mode — James Sturtevant)** — 🟡 NEEDS REVIEW. 850 additions, 3 files. PRD exists, concept solid. Not blocking replatform but adds value for isolated workflows. Needs squad member (Keaton/Kujan) review of SDK integration. Recommendation: queue for Wave E after replatform stabilizes.
+  - **#552 (Ralph Routing-Aware Triage — Shayne Boyer)** — 🟢 APPROVED BY KEATON. 12596 additions, 32 files changed (net -10061 deletions due to refactor). 57 tests across 3 files, all passing. Replaced keyword matching with routing.md-aware triage. Smart work. Ready to merge. This unblocks Ralph's ability to do real work (no more dumb matching).
+  - **#547 (Squad Remote Control — Tamir Dresher)** — 🟡 SHIP-WORTHY. 2885 additions, 19 files, 18 tests passing. PTY+WebSocket+devtunnel for phone access. Novel feature. Blog post published. Code quality is solid. Recommendation: merge AFTER replatform (Wave E feature). Not critical.
+- **Replatform Readiness:**
+  - **Architecture:** 🟢 MATURE. SDK/CLI split is clean, one-way dependency graph, strict TypeScript, 18 module exports, hook-based governance. Patterns compound. No architectural debt blocking replatform.
+  - **Distribution:** ✅ READY. Both packages published to npm (v0.8.5.1). CLI bin works. `npm install -g @bradygaster/squad-cli && squad init` path verified. Quick start guide clear in README.
+  - **Documentation:** ✅ ADEQUATE FOR ALPHA. README is strong (what is squad, quick start, status badge). docs/build.js already generates static HTML. Docs site at https://bradygaster.github.io/squad-pr/ is ready. Content is adequate (8 guides, good examples, architecture overview exists). No blockers.
+  - **Messaging:** ✅ CLEAR. Status badge says "alpha" on README. All experimental warnings in place. Breaking change policy documented (alpha → beta → stable). Contributor messaging solid.
+  - **Known Gaps:**
+    - #532 (dogfooding) still open — must close for confidence before launch
+    - POST-replatform: UX audit findings from Marquez + dogfooding findings (15-20 issues in queue)
+    - POST-replatform: Observability dashboard + advanced features (Wave E backlog)
+- **Blocker Analysis:** Only 1: #532. No technical blockers to replatform launch.
+- **What "Moved Over" Means:**
+  - Public alpha of Squad v1 from squad-pr repo (not squad-beta)
+  - Initial audience: GitHub Copilot users, early adopters, dev community
+  - Distribution: npm only (drop bradygaster/squad beta references)
+  - Support model: GitHub issues + discussion, no SLA (alpha messaging)
+- **Concrete Next Steps for Brady:**
+  1. **IMMEDIATE (today):** Close #532 with Waingro (dogfood 4 repos). This unlocks replatform confidence.
+  2. **TODAY-TOMORROW:** Merge #552 (Ralph triage). Ship #547 later (Wave E).
+  3. **REPLATFORM LAUNCH:** Update repo settings (star, description), push v0.8.5.1 tag, announce to beta users + GitHub Copilot team.
+  4. **POST-LAUNCH (Wave E):** Triage dogfood findings + community feedback (likely 15-20 issues). Marquez's UX audit + user feedback drives priorities. Cheritto/Kovash focus on UX polish.
+- **Risk Mitigation:**
+  - Dogfood #532 is CRITICAL. Don't launch without it.
+  - Ralph #552 merge is safe (tests pass, Keaton reviewed). Merge immediately.
+  - Remote Control #547 is a bonus feature — defer to Wave E.
+  - Observability (Saul/OTel) is NOT blocking replatform but IS needed for production. Plan for Wave F (post-alpha).
+- **Pattern Observed:** Team built a solid foundation (Waves A–D). External contributors are shipping quality PRs. Ecosystem growing (James + Shayne + Tamir). Dogfooding + community feedback will drive next wave priorities — this is healthy.
+- **Confidence Level:** 🟡 READY WITH CAVEATS. Ship after #532 closes. Messaging is clear. Architecture holds. Distribution proven. Next 2 weeks: stabilize with community, iterate on UX, plan Wave E based on real usage.

@@ -3749,3 +3749,347 @@ oUncheckedIndexedAccess: true to tsconfig.json (Edie, M2)
 4. Fixed broken CONTRIBUTING link: corrected relative path from ../CONTRIBUTORS.md to CONTRIBUTING.md
 
 **Why:** Makes public documentation honest, helpful, consistent, and functional. Signals alpha status clearly while maintaining friendly tone and enabling user feedback channels.
+
+
+# Decision: Ghost Command Aliasing Strategy
+
+**Author:** Fenster
+**Date:** 2026-02-24
+**Issues:** #501, #503, #504, #507, #509
+
+## Context
+
+Five commands were documented but had no CLI handlers: `hire`, `heartbeat`, `shell`, `loop`, `run`. Users hitting these got "Unknown command" errors.
+
+## Decision
+
+Wire them as aliases to existing functionality rather than building new features:
+
+| Ghost Command | Resolution | Rationale |
+|---------------|-----------|-----------|
+| `squad hire` | Alias → `squad init` | Team creation = initialization |
+| `squad heartbeat` | Alias → `squad doctor` | Health check already exists |
+| `squad shell` | Explicit launch → `runShell()` | Same as no-args behavior, but explicit |
+| `squad loop` | Alias → `squad triage` | Work monitoring = triage |
+| `squad run <agent>` | Stub with "coming soon" message | Non-trivial to implement properly; directs users to REPL |
+
+## Rationale
+
+- **Minimal code change:** Each alias is 1-2 lines in the command router.
+- **No new dependencies:** All aliases reuse existing implementations.
+- **`run` is deferred:** Proper agent dispatch outside the REPL requires session lifecycle changes. A stub with a helpful message is better than a broken implementation.
+- **Backwards compatible:** No existing commands were changed.
+
+## Impact
+
+- CLI help text updated to show all five commands.
+- Users can now use the documented names without confusion.
+- `squad run` will need a real implementation in a future PR when non-interactive agent dispatch is ready.
+
+
+### Per-command --help/-h: intercept-before-dispatch pattern
+**By:** Fenster (Core Dev)
+**Date:** 2025-07-14
+**PR:** #533
+**Closes:** #511, #512
+
+**What:** All CLI subcommands now support `--help` and `-h` flags. Help is intercepted in a single block *before* the command routing switch, so destructive commands (like `squad init`) never execute when help is requested.
+
+**Why:** Brady reported that `squad init --help` actually ran init instead of showing help. This is a safety issue — users expect `--help` to be non-destructive. The intercept-before-dispatch pattern guarantees no side effects.
+
+**Convention:** Any new CLI command added to the router MUST have a corresponding entry in the `getCommandHelp()` map in `cli-entry.ts`. Help text should include: usage line, 1-2 sentence description, options, and at least 2 examples.
+
+**Source:** Draft help text from `.squad/agents/fenster/cli-command-inventory.md`.
+
+
+# Replatform Readiness Assessment (Brady Handoff)
+
+**Date:** 2026-02-27T23:30:00Z  
+**Author:** Keaton (Lead)  
+**Status:** DECISION — Ready to ship v1 public alpha  
+
+---
+
+## Context
+
+Brady asked: "We gotta get this thing moved over" — meaning the v1 replatform from squad-beta to squad-pr as public alpha. Keaton assessed full project state: codebase, tests, open issues, open PRs, readiness to launch.
+
+---
+
+## Executive Summary
+
+**🟡 READY WITH ONE CRITICAL BLOCKER**
+
+- **Codebase:** Solid. 2944 tests passing (1 environmental failure). Clean build. No technical debt blocking launch.
+- **Distribution:** Proven. Both packages published to npm (v0.8.5.1). Quick-start path works.
+- **Messaging:** Clear. Alpha status in README. Experimental warnings in place.
+- **BLOCKER:** Issue #532 (dogfood testing). Must close before replatform launch for confidence.
+- **External PRs:** 3 quality PRs from contributors (Sturtevant, Boyer, Dresher). One (#552 Ralph triage) ready to merge. Two others for Wave E.
+- **Timeline:** Close #532 (1-2 days), merge #552 (today), replatform launch (Feb 28 or Mar 1).
+
+---
+
+## Detailed Assessment
+
+### 1. Codebase State ✅
+
+**Build**
+- `npm run build -w packages/squad-sdk`: Compiles cleanly in <3s. Zero errors.
+- Both packages (squad-sdk v0.8.5.1, squad-cli v0.8.5.1) are up-to-date.
+- TypeScript strict mode enforced. No `@ts-ignore` violations.
+
+**Tests**
+- **Total:** 2944 passing, 1 failing, 2 skipped, 1 todo.
+- **Failure:** aspire-integration.test.ts (docker pull timeout). Environmental, not code. Safe to ignore for replatform.
+- **Passing tests:** Comprehensive. 57 test files. Coverage across SDK modules, CLI, E2E, hostile QA, accessibility.
+- **Runtime:** 51.39s. Fast feedback loop.
+- **Quality:** High. 2930+ core tests passing. Flakiness is minimal (docker dependency, not code).
+
+**Git History**
+- HEAD = dev (same as origin/main).
+- 6 recent commits (samples, docs, CLI help, ghost commands, OTel, Ctrl+C). All shipped.
+- No open PRs on main. Workspace clean (only .squad/agents/kobayashi/history.md unstaged — non-blocking).
+
+**Architecture**
+- SDK/CLI split complete. Clean one-way DAG (CLI → SDK → @github/copilot-sdk).
+- 18+ SDK subpath exports. Module boundaries clear.
+- Hook-based governance (not prompt-based). Hook system proven.
+- No architectural debt. All major systems integrated and tested.
+
+---
+
+### 2. Open Issues (2 total, 1 is BLOCKER) ⚠️
+
+**#532 — Dogfood REPL against real-world repositories (P0) — 🔴 BLOCKER**
+- **Assigned:** Waingro + Hockney
+- **What:** Test REPL against 4 repo types: fresh init, existing squadded, monorepo, solo.
+- **Why critical:** Only open issue blocking replatform confidence. No other issues pending.
+- **Recommendation:** Close this week. Brady + Waingro priority.
+
+**#542 — GitHub Project Board automation (P1-ish) — 🟡 NICE-TO-HAVE**
+- **Assigned:** Hockney
+- **What:** `squad board` CLI command + `sync-board.yml` workflow. 6 board columns. Well-designed.
+- **Why defer:** Scope is clean but not critical to replatform launch. Wave E feature.
+- **Recommendation:** Queue for Wave E. Hockney can start after replatform stabilizes.
+
+---
+
+### 3. Open PRs (3 total, from external contributors) 📊
+
+**#552 — Ralph Routing-Aware Triage (Shayne Boyer) — 🟢 MERGE IMMEDIATELY**
+- **Scope:** 12596 additions, 32 files, -10061 net deletions (refactor).
+- **What:** Ralph's heartbeat + watch now read routing.md (smart triage, no dumb keywords).
+- **Tests:** 57 tests across 3 files. All passing.
+- **Quality:** High. Reviewed by Keaton. Code is solid. Unblocks Ralph for real work.
+- **Recommendation:** Merge today. Safe and valuable.
+
+**#553 — Personal Squad Consult Mode (James Sturtevant) — 🟡 SHIP IN WAVE E**
+- **Scope:** 850 additions, 3 files. PRD exists.
+- **What:** Portable personal squads (isolated workflows).
+- **Tests:** Present. PRD quality good.
+- **Why defer:** Good feature but not critical to replatform launch. Adds complexity.
+- **Recommendation:** Merge in Wave E after replatform stabilizes + community feedback in.
+
+**#547 — Squad Remote Control (Tamir Dresher) — 🟡 SHIP IN WAVE E**
+- **Scope:** 2885 additions, 19 files. 18 tests passing.
+- **What:** PTY+WebSocket+devtunnel for phone/browser access to CLI session.
+- **Quality:** Solid. Novel feature. Blog post published.
+- **Why defer:** Wave E feature. Not blocking replatform.
+- **Recommendation:** Merge in Wave E. Ship as bonus after public alpha stabilizes.
+
+---
+
+## Replatform Readiness
+
+### Architecture ✅
+- Monorepo split (SDK/CLI) is mature.
+- Dependency graph is clean (CLI → SDK → Copilot SDK).
+- Module exports are clear (18+ subpath exports for SDK).
+- Hook system is proven.
+- No architectural blockers to replatform.
+
+### Distribution ✅
+- Both packages published to npm (v0.8.5.1).
+- CLI bin entries work: `squad`, `squad-cli`.
+- Quick-start path verified: `npm install -g @bradygaster/squad-cli && squad init`.
+- No distribution blockers.
+
+### Documentation ✅
+- README is strong (pitch + quick start + status badge).
+- Docs site ready (static HTML via docs/build.js).
+- 8 guides + examples + architecture overview.
+- Experimental messaging clear.
+- Breaking change policy documented.
+- No documentation blockers.
+
+### Testing ✅
+- 2944 tests passing. One environmental failure (docker), not code.
+- E2E coverage present. Accessibility tested. Hostile QA tested.
+- Speed gates enforced. Quality metrics solid.
+- No test blockers.
+
+### Messaging ✅
+- Status badge: "alpha" (clear experimental messaging).
+- README: Honest about what Squad is.
+- Contributor guide: Solid (CONTRIBUTING.md).
+- Support model: GitHub issues + discussions (appropriate for alpha).
+- No messaging blockers.
+
+---
+
+## Critical Blocker & Risk Mitigation
+
+### BLOCKER: #532 (Dogfood) 🔴
+- **Must close before replatform launch.**
+- **Impact:** Without dogfooding, we ship to public without confidence in real-world usage.
+- **Mitigation:** Brady + Waingro close this week (Feb 28). Test against 4 repo types. Document findings.
+- **Confidence gate:** "We've tested on fresh projects, monorepos, and existing squadded repos — all work."
+
+### Secondary Risk: Observer Effects from External PRs
+- **#553 + #547 are quality PRs but add complexity.** Recommend deferring both to Wave E.
+- **Mitigation:** Merge #552 (Ralph triage) only. Hold the other two. Reduces surface area at launch.
+
+### Post-Launch Risks (Not Blockers)
+- **Observability:** OTel integration is not critical for alpha. Plan for Wave F (production use case).
+- **UX debt:** Marquez's UX audit findings + dogfood findings will drive Wave E. Expected and healthy.
+- **Community feedback:** Assume 15-20 issues will surface in first week of public use. Plan to triage + prioritize.
+
+---
+
+## Concrete Timeline
+
+### Today (Feb 27)
+- Merge #552 (Ralph triage). Safe. Tests pass. Keaton reviewed.
+- Start #532 (dogfood). Brady + Waingro begin testing against 4 repo types.
+
+### Tomorrow (Feb 28)
+- Close #532. Document findings.
+- Tag v0.8.5.1 for public release (if not already done).
+- Update repo description/settings for public alpha messaging.
+
+### Feb 28 or Mar 1
+- **REPLATFORM LAUNCH:** Announce to beta users + GitHub Copilot team.
+- Public alpha available at `npm install -g @bradygaster/squad-cli`.
+- Issue #553, #547 queued for Wave E (post-launch).
+
+### Wave E (Post-Launch, 1-2 weeks)
+- Dogfood findings triage.
+- Marquez UX audit implementation.
+- Community feedback iteration.
+- Merge #553 + #547 (personal consult + remote control).
+- Plan observability (Wave F).
+
+---
+
+## Decision
+
+### APPROVE Replatform Launch ✅
+
+**Contingency:** #532 (dogfood) must close first. No other blockers.
+
+**Scope:**
+- Close #532 (Waingro/Brady).
+- Merge #552 (Boyer's Ralph triage).
+- Ship v0.8.5.1 public alpha.
+- Queue #553 + #547 for Wave E.
+
+**Success Metrics:**
+- Public launch announcement (by Mar 1).
+- 0 critical bugs in first week (2944 tests + dogfood coverage gives us confidence).
+- 5-10 community issues logged (healthy for alpha).
+- Clear wave planning for Wave E based on feedback.
+
+---
+
+## Appendix: PR Decision Matrix
+
+| PR | Author | Scope | Quality | Blocker | Decision |
+|----|--------|-------|---------|---------|----------|
+| #552 | Boyer | 12.5k+, routing triage | High | No | ✅ **Merge today** |
+| #553 | Sturtevant | 850+, personal squads | Good | No | 🟡 **Wave E** |
+| #547 | Dresher | 2.9k+, remote control | Solid | No | 🟡 **Wave E** |
+
+---
+
+## Next Steps (for Brady)
+
+1. **Verify #532 closure** (dogfood 4 repos). Assign if not started.
+2. **Merge #552.** Safe. Tests pass. Ship now.
+3. **Tag v0.8.5.1** for public release.
+4. **Announce replatform launch** to beta users + Copilot team.
+5. **Plan Wave E** based on dogfood findings + community feedback.
+
+---
+
+**Co-authored-by:** Copilot <223556219+Copilot@users.noreply.github.com>
+
+
+# Decision: REPL cancellation and configurable timeout
+
+**Author:** Kovash  
+**Date:** 2026-02-25  
+**PR:** #538  
+**Issues:** #500, #502
+
+## Context
+
+The REPL had two UX friction points: (1) Ctrl+C during streaming left the shell locked because `processing` wasn't reset, and (2) the 10-minute session timeout was hardcoded.
+
+## Decisions
+
+1. **Ctrl+C immediately resets `processing` state** — `setProcessing(false)` is called alongside `onCancel()` in App.tsx's Ctrl+C handler, so the InputPrompt re-enables instantly. The async session abort still runs in background.
+
+2. **Timeout configuration uses `SQUAD_REPL_TIMEOUT` env var (seconds)** — Precedence: `SQUAD_REPL_TIMEOUT` → `SQUAD_SESSION_TIMEOUT_MS` (SDK-level, milliseconds) → 600000ms default. The `--timeout` CLI flag sets the env var before shell launch.
+
+## Impact
+
+- All shell components: Ctrl+C behavior change affects InputPrompt, ThinkingIndicator
+- CLI entry point: new `--timeout` flag
+- SDK: no changes (existing `SQUAD_SESSION_TIMEOUT_MS` env var preserved as fallback)
+
+
+# Decision: Shell Observability Metrics Design
+
+**Author:** Saul (Aspire & Observability)
+**Date:** 2026-02-24
+**Issues:** #508, #520, #526, #530, #531
+
+## Context
+
+Five overlapping issues requested telemetry instrumentation of the REPL shell: session lifetime, agent response latency, error rate tracking, and basic retention metrics. The SDK already had OTel infrastructure (Phases 1–4), but no user-facing shell metrics.
+
+## Decision
+
+### Metrics Added (all under `squad.shell.*` namespace)
+
+| Metric | Type | Unit | Description |
+|--------|------|------|-------------|
+| `squad.shell.session_count` | Counter | — | Incremented once per shell session start (retention proxy) |
+| `squad.shell.session_duration_ms` | Histogram | ms | Recorded on shell exit with total session lifetime |
+| `squad.shell.agent_response_latency_ms` | Histogram | ms | Time from message dispatch to first visible response token |
+| `squad.shell.error_count` | Counter | — | Errors during dispatch (agent, coordinator, general) |
+
+### Opt-in Gate
+
+**All shell metrics are gated behind `SQUAD_TELEMETRY=1`** — not just the OTLP endpoint. This is a stronger privacy guarantee than the SDK-level metrics (which activate whenever `OTEL_EXPORTER_OTLP_ENDPOINT` is set). Rationale: shell metrics describe user behavior patterns, so they require explicit consent.
+
+### Architecture
+
+- New module: `packages/squad-cli/src/cli/shell/shell-metrics.ts`
+- Uses `getMeter('squad-shell')` from SDK — shares the same MeterProvider and OTLP pipeline
+- Wired into `runShell()` lifecycle in `index.ts`
+- Latency measured at first `message_delta` event (first visible token), not at connection time
+- No PII collected — only agent names, dispatch types, and timing data
+
+### Alternatives Considered
+
+1. **SDK-level only** — Rejected because SDK metrics track API sessions, not user-visible experience
+2. **Separate OTLP endpoint for shell** — Over-engineered; sharing the SDK's MeterProvider is simpler
+3. **Always-on with OTLP endpoint** — Rejected for privacy; shell metrics need explicit opt-in
+
+## Impact
+
+- 18 new tests covering all metrics + opt-in gating
+- Zero impact when `SQUAD_TELEMETRY` is unset (no instruments created)
+- Compatible with existing Aspire dashboard — metrics appear under `squad-shell` meter
+
