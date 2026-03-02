@@ -87,6 +87,34 @@ function getSquadAgentTemplatePath(): string | null {
 }
 
 /**
+ * Get the git remote URL for a repository.
+ * Converts SSH URLs to HTTPS format for display.
+ */
+function getGitRemoteUrl(projectRoot: string): string | undefined {
+  try {
+    const remoteUrl = execSync('git remote get-url origin', {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+
+    // Convert SSH URL to HTTPS for readability
+    // git@github.com:owner/repo.git → https://github.com/owner/repo
+    if (remoteUrl.startsWith('git@')) {
+      const match = remoteUrl.match(/git@([^:]+):(.+?)(\.git)?$/);
+      if (match) {
+        return `https://${match[1]}/${match[2]}`;
+      }
+    }
+
+    // Remove .git suffix if present
+    return remoteUrl.replace(/\.git$/, '');
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Generate squad.agent.md for consult mode.
  * Uses the full template with consult mode preamble injected.
  */
@@ -182,7 +210,7 @@ Run \`squad extract\` to review and merge these to your personal squad.
  * Patch the Scribe charter in the copied squad with consult mode instructions.
  */
 function patchScribeCharterForConsultMode(squadDir: string): void {
-  const charterPath = path.join(squadDir, 'scribe-charter.md');
+  const charterPath = path.join(squadDir, 'agents', 'scribe', 'charter.md');
   
   if (!fs.existsSync(charterPath)) {
     // No scribe charter to patch — skip silently
@@ -234,6 +262,8 @@ export interface SetupConsultModeOptions {
   personalSquadRoot?: string;
   /** If true, don't modify any files — just return what would happen */
   dryRun?: boolean;
+  /** Override project name (default: basename of projectRoot). Useful for worktrees. */
+  projectName?: string;
 }
 
 /**
@@ -300,7 +330,7 @@ export async function setupConsultMode(
   const dryRun = options.dryRun ?? false;
 
   const squadDir = path.resolve(projectRoot, '.squad');
-  const projectName = path.basename(projectRoot);
+  const projectName = options.projectName || path.basename(projectRoot);
   const agentFile = path.resolve(projectRoot, '.github', 'agents', 'squad.agent.md');
 
   // Check if we're in a git repository
@@ -419,6 +449,8 @@ export interface ExtractLearningsOptions {
   acceptRisks?: boolean;
   /** Optional callback to select which learnings to extract (for interactive mode) */
   selectLearnings?: (learnings: StagedLearning[]) => Promise<StagedLearning[]>;
+  /** Override project name (default: basename of projectRoot). Useful for worktrees. */
+  projectName?: string;
 }
 
 /**
@@ -511,7 +543,7 @@ export async function extractLearnings(
   const acceptRisks = options.acceptRisks ?? false;
 
   const squadDir = path.resolve(projectRoot, '.squad');
-  const projectName = path.basename(projectRoot);
+  const projectName = options.projectName || path.basename(projectRoot);
 
   // Check if we're in consult mode
   if (!fs.existsSync(squadDir)) {
@@ -540,12 +572,16 @@ export async function extractLearnings(
   // Block copyleft extraction unless --accept-risks
   const blocked = license.type === 'copyleft' && !acceptRisks;
 
+  // Get repository URL for logging
+  const repoUrl = getGitRemoteUrl(projectRoot);
+
   if (blocked) {
     return {
       extracted: [],
       skipped: [],
       license,
       projectName,
+      repoUrl,
       timestamp: new Date().toISOString(),
       acceptedRisks: false,
       blocked: true,
@@ -572,6 +608,7 @@ export async function extractLearnings(
     skipped,
     license,
     projectName,
+    repoUrl,
     timestamp: new Date().toISOString(),
     acceptedRisks: acceptRisks,
   };
@@ -665,7 +702,7 @@ export function detectLicense(licenseContent: string): LicenseInfo {
 
   // 1. Prefer SPDX identifiers when present.
   const spdxMatch = content.match(/SPDX-License-Identifier:\s*([^\s*]+)/i);
-  if (spdxMatch) {
+  if (spdxMatch && spdxMatch[1]) {
     const spdxId = spdxMatch[1];
     const spdxIdUpper = spdxId.toUpperCase();
 
@@ -786,7 +823,7 @@ export interface ExtractionResult {
   timestamp: string;
   /** Whether --accept-risks was used */
   acceptedRisks: boolean;
-  /** Optional repository URL */
+  /** Repository URL (GitHub, etc.) */
   repoUrl?: string;
 }
 
@@ -816,7 +853,7 @@ export async function logConsultation(
     fs.mkdirSync(consultDir, { recursive: true });
   }
 
-  const today = result.timestamp.split('T')[0]; // YYYY-MM-DD format
+  const today = result.timestamp.split('T')[0] ?? new Date().toISOString().split('T')[0]!; // YYYY-MM-DD format
 
   if (fs.existsSync(logPath)) {
     // Append to existing log — update "Last session" and add new entry
@@ -874,11 +911,8 @@ function formatSessionEntry(result: ExtractionResult, date: string): string {
 `;
   }
 
-  const lines = result.extracted.map(l => {
-    const summary = l.content.slice(0, 60).replace(/\n/g, ' ');
-    const ellipsis = l.content.length > 60 ? '...' : '';
-    return `- ${l.filename}: "${summary}${ellipsis}"`;
-  });
+  // Just list titles/filenames, not content
+  const lines = result.extracted.map(l => `- ${l.filename}`);
 
   return `### ${date}
 ${lines.join('\n')}
@@ -891,9 +925,31 @@ ${lines.join('\n')}
 // ============================================================================
 
 /**
+ * Check if content looks like a skill (has YAML frontmatter with skill markers).
+ */
+function isSkillContent(content: string): boolean {
+  // Skills have YAML frontmatter with name/confidence/domain
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!frontmatterMatch || !frontmatterMatch[1]) return false;
+
+  const frontmatter = frontmatterMatch[1];
+  // Must have at least name and confidence to be a skill
+  return frontmatter.includes('name:') && frontmatter.includes('confidence:');
+}
+
+/**
+ * Extract skill name from YAML frontmatter.
+ */
+function extractSkillName(content: string): string | null {
+  const match = content.match(/^---\n[\s\S]*?name:\s*["']?([^"'\n]+)["']?/);
+  return match && match[1] ? match[1].trim() : null;
+}
+
+/**
  * Merge staged learnings into personal squad.
  *
- * Appends decision content to decisions.md in the personal squad.
+ * Routes skills to ~/.squad/skills/{name}/SKILL.md
+ * Routes decisions to ~/.squad/decisions.md (with smart merge)
  *
  * @param learnings - Staged learnings to merge
  * @param personalSquadRoot - Path to personal squad root
@@ -907,33 +963,96 @@ export async function mergeToPersonalSquad(
   }
 
   let decisionsAdded = 0;
-  const skillsAdded = 0;
+  let skillsAdded = 0;
 
-  // Append all learnings to decisions.md
-  const decisionsPath = path.join(personalSquadRoot, 'decisions.md');
-  const learningsContent = learnings
-    .map(l => l.content.trim())
-    .join('\n\n');
+  const decisions: StagedLearning[] = [];
+  const skills: StagedLearning[] = [];
 
-  if (fs.existsSync(decisionsPath)) {
-    const existing = fs.readFileSync(decisionsPath, 'utf-8');
-    // Append to end of file
-    fs.writeFileSync(
-      decisionsPath,
-      existing.trimEnd() + '\n\n## Extracted from Consultations\n\n' + learningsContent + '\n',
-      'utf-8',
-    );
-  } else {
-    // Create new decisions file
-    fs.writeFileSync(
-      decisionsPath,
-      `# Squad Decisions\n\n## Extracted from Consultations\n\n${learningsContent}\n`,
-      'utf-8',
-    );
+  // Classify learnings
+  for (const learning of learnings) {
+    if (isSkillContent(learning.content)) {
+      skills.push(learning);
+    } else {
+      decisions.push(learning);
+    }
   }
-  decisionsAdded = learnings.length;
 
-  // TODO: Future work — detect skills vs decisions and route accordingly
+  // Route skills to ~/.squad/skills/{name}/SKILL.md
+  const skillsDir = path.join(personalSquadRoot, 'skills');
+  for (const skill of skills) {
+    const skillName = extractSkillName(skill.content) || skill.filename.replace('.md', '');
+    const skillDir = path.join(skillsDir, skillName);
+
+    // Create skill directory if needed
+    if (!fs.existsSync(skillDir)) {
+      fs.mkdirSync(skillDir, { recursive: true });
+    }
+
+    const skillPath = path.join(skillDir, 'SKILL.md');
+
+    // Write skill (overwrites if exists — newer extraction wins)
+    fs.writeFileSync(skillPath, skill.content, 'utf-8');
+    skillsAdded++;
+  }
+
+  // Route decisions to ~/.squad/decisions.md
+  if (decisions.length > 0) {
+    const decisionsPath = path.join(personalSquadRoot, 'decisions.md');
+    const newContent = decisions.map(d => d.content.trim()).join('\n\n');
+
+    if (fs.existsSync(decisionsPath)) {
+      const existing = fs.readFileSync(decisionsPath, 'utf-8');
+
+      // Check if we already have an "Extracted from Consultations" section
+      if (existing.includes('## Extracted from Consultations')) {
+        // Append under the existing section (before any subsequent ## heading)
+        const parts = existing.split('## Extracted from Consultations');
+        const beforeSection = parts[0];
+        const afterSection = parts[1] ?? '';
+
+        // Find where the next section starts (if any)
+        const nextSectionMatch = afterSection.match(/\n## /);
+        if (nextSectionMatch && nextSectionMatch.index !== undefined) {
+          // Insert before next section
+          const sectionContent = afterSection.slice(0, nextSectionMatch.index);
+          const rest = afterSection.slice(nextSectionMatch.index);
+          fs.writeFileSync(
+            decisionsPath,
+            beforeSection +
+              '## Extracted from Consultations' +
+              sectionContent.trimEnd() +
+              '\n\n' +
+              newContent +
+              '\n' +
+              rest,
+            'utf-8',
+          );
+        } else {
+          // No next section — append to end
+          fs.writeFileSync(
+            decisionsPath,
+            existing.trimEnd() + '\n\n' + newContent + '\n',
+            'utf-8',
+          );
+        }
+      } else {
+        // No extraction section yet — create one
+        fs.writeFileSync(
+          decisionsPath,
+          existing.trimEnd() + '\n\n## Extracted from Consultations\n\n' + newContent + '\n',
+          'utf-8',
+        );
+      }
+    } else {
+      // Create new decisions file
+      fs.writeFileSync(
+        decisionsPath,
+        `# Squad Decisions\n\n## Extracted from Consultations\n\n${newContent}\n`,
+        'utf-8',
+      );
+    }
+    decisionsAdded = decisions.length;
+  }
 
   return { decisions: decisionsAdded, skills: skillsAdded };
 }
