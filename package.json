@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/squad",
-  "version": "0.8.6.15-preview",
+  "version": "0.8.6.16-preview",
   "private": true,
   "description": "Squad — Programmable multi-agent runtime for GitHub Copilot, built on @github/copilot-sdk",
   "type": "module",
@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "prebuild": "node scripts/bump-build.mjs",
     "build": "npm run build -w packages/squad-sdk && npm run build -w packages/squad-cli",
     "test": "vitest run",
