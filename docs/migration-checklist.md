@@ -1,4 +1,4 @@
-# Migration Checklist: origin (squad-pr) → beta (squad) — v0.6.0
+# Migration Checklist: origin (squad-pr) → beta (squad) — npm 0.8.18 / public v0.6.0
 
 **⚠️ BANANA RULE IS ACTIVE.** Do NOT execute ANY steps until Brady says "banana".
 
@@ -51,12 +51,14 @@ If NOT checked, STOP. Do not proceed.
 ---
 
 ## Phase 5: Version Alignment on Beta
-**Decision:** v0.6.0 is the target public release version (decided by Brady).
+**IMPORTANT CLARIFICATION:** Two distinct version numbers serve two purposes:
+- **npm packages** (`@bradygaster/squad-cli`, `@bradygaster/squad-sdk`): Continue at 0.8.x cadence. Next publish after 0.8.17 is **0.8.18** (not 0.6.0).
+- **Public repo tag** (`bradygaster/squad`): The v0.6.0 GitHub Release tag marks this migration commit (final public release before npm transition).
 
-- [ ] Beta's package.json versions should be set to 0.6.0 at migration merge commit
-- [ ] Create v0.6.0 tag at merge commit on beta/main
+- [ ] **Do NOT** change npm package.json versions to 0.6.0 — keep them at 0.8.18-preview during development
+- [ ] Create **v0.6.0 tag at migration merge commit** on beta/main (public repo marker only, not npm package version)
 - [ ] Document as "Migration release: GitHub-native → npm distribution, monorepo structure"
-- [ ] Rationale: Clean public version (0.5.4 → 0.6.0 is standard semver bump), clear "before/after" marker for users
+- [ ] Rationale: Beta's public version jump (0.5.4 → 0.6.0) signals the release; npm packages follow their own cadence (0.8.17 → 0.8.18)
 
 ---
 
@@ -106,18 +108,18 @@ If NOT checked, STOP. Do not proceed.
 - [ ] Verify npm credentials: `npm whoami`
 - [ ] Build packages: `npm run build` (exit code 0)
 - [ ] Test packages: `npm test` (all pass)
-- [ ] Publish SDK: `npm publish -w packages/squad-sdk --access public`
-- [ ] Publish CLI: `npm publish -w packages/squad-cli --access public`
-- [ ] Verify on npm: `npm view @bradygaster/squad-cli@0.6.0`
-- [ ] Verify on npm: `npm view @bradygaster/squad-sdk@0.6.0`
+- [ ] Publish SDK: `npm publish -w packages/squad-sdk --access public` (publishes 0.8.18 from current package.json)
+- [ ] Publish CLI: `npm publish -w packages/squad-cli --access public` (publishes 0.8.18 from current package.json)
+- [ ] Verify on npm: `npm view @bradygaster/squad-cli@0.8.18`
+- [ ] Verify on npm: `npm view @bradygaster/squad-sdk@0.8.18`
 
 ---
 
 ## Phase 9: GitHub Release (Beta Repo)
 - [ ] Fetch latest beta/main: `git fetch beta && git log beta/main -1`
-- [ ] Tag beta at merge commit: `git tag v0.8.17 <merge-commit-sha>`
-- [ ] Push tag: `git push beta v0.8.17`
-- [ ] Create GitHub Release: `gh release create v0.8.17 --repo bradygaster/squad --title "v0.8.17 — npm Distribution & Monorepo Structure"`
+- [ ] Tag beta at merge commit: `git tag v0.6.0 <merge-commit-sha>` (public repo release marker, not npm package version)
+- [ ] Push tag: `git push beta v0.6.0`
+- [ ] Create GitHub Release: `gh release create v0.6.0 --repo bradygaster/squad --title "v0.6.0 — Migration: GitHub-native → npm Distribution"`
 - [ ] Release body includes:
   - [ ] **Breaking Changes:** GitHub-native → npm, `.ai-team/` → `.squad/`, monorepo structure
   - [ ] **New Distribution:** `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`
@@ -152,11 +154,11 @@ If NOT checked, STOP. Do not proceed.
 ---
 
 ## Phase 13: Verification
-- [ ] Origin packages on npm: `npm view @bradygaster/squad-cli@0.6.0` ✅
-- [ ] Origin packages on npm: `npm view @bradygaster/squad-sdk@0.6.0` ✅
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-cli@0.8.18` ✅
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-sdk@0.8.18` ✅
 - [ ] Beta release on GitHub: `gh release view v0.6.0 --repo bradygaster/squad` ✅
 - [ ] Beta main branch HEAD includes migration: `git log beta/main --oneline -5` shows merge ✅
-- [ ] Test install: `npm install -g @bradygaster/squad-cli@0.6.0 && squad --version` → v0.6.0 ✅
+- [ ] Test install: `npm install -g @bradygaster/squad-cli@0.8.18 && squad --version` → 0.8.18 ✅
 
 ---
 
@@ -188,14 +190,14 @@ If NOT checked, STOP. Do not proceed.
 ---
 
 ## Final Checklist
-- [ ] **v0.6.0 tag exists on beta** (at migration merge commit)
+- [ ] **v0.6.0 tag exists on beta** (public repo migration marker at merge commit)
 - [ ] **origin/migration pushed to beta/migration**
 - [ ] **beta/migration merged to beta/main**
-- [ ] **Both npm packages published: squad-cli@0.6.0, squad-sdk@0.6.0**
-- [ ] **GitHub Release v0.6.0 created on beta repo**
-- [ ] **Beta users have upgrade path documented**
-- [ ] **Origin bumped to 0.8.18-preview for continued development**
-- [ ] **All docs updated with v0.6.0 specifics**
+- [ ] **Both npm packages published: squad-cli@0.8.18, squad-sdk@0.8.18**
+- [ ] **GitHub Release v0.6.0 created on beta repo** (public release marker)
+- [ ] **Beta users have upgrade path documented** (npm 0.8.18 installation)
+- [ ] **Origin bumped to 0.8.19-preview.1 for continued development** (next dev version)
+- [ ] **All docs updated with correct versioning (npm 0.8.18 / public v0.6.0)**
 
 ---
 

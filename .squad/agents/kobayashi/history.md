@@ -14,6 +14,20 @@
 - Distribution: GitHub-native (npx github:bradygaster/squad), never npmjs.com
 - Zero tolerance for state corruption — .squad/ state is the team's memory
 
+### 2026-03-03: Versioning Model Clarification — npm vs Public Repo (CRITICAL)
+**Status:** Decision documented, migration checklist + CHANGELOG fixed.
+- **The issue:** Coordinator confused npm package versions with public repo release tag
+- **The truth:** Two distinct version numbers serve different purposes
+  - **npm packages:** Continue at 0.8.x cadence (0.8.17 shipped → next is 0.8.18). Development uses X.Y.Z-preview.N format.
+  - **Public repo tag:** v0.6.0 marks the migration release on `bradygaster/squad`. This is metadata, not a package version.
+- **Released versions:** 0.8.17 already on npm and must NOT be bumped down to 0.6.0
+- **Migration release:** Public repo (beta) gets v0.6.0 GitHub Release tag at migration merge commit
+- **Fixes made:**
+  1. migration-checklist.md: Corrected all npm package version references (0.6.0 → 0.8.18)
+  2. CHANGELOG.md: Changed [0.6.0] section to [0.8.18-preview] (tracks npm packages, not public repo)
+  3. Created decision file: `.squad/decisions/inbox/kobayashi-versioning-clarification.md`
+- **Prevention:** This decision should be referenced in all future releases to avoid repeating the confusion
+
 ### 2026-02-21: Issue #208 — @changesets/cli setup complete
 **Status:** PR #276 merged.
 - Installed @changesets/cli v2 (101 new packages)
