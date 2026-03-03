@@ -40,7 +40,7 @@ Squad is distributed exclusively via npm:
 
 | Channel | Distribution | Version | Versioning | Installation |
 |---------|--------------|---------|------------|--------------|
-| **npm** | npm registry `@bradygaster/squad-cli` | v0.5.4 → v0.6.0 (after migration) | Semantic versioning with stable & insider channels | `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli` |
+| **npm** | npm registry `@bradygaster/squad-cli` | v0.5.4 → v0.8.17 (after migration) | Semantic versioning with stable & insider channels | `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli` |
 
 > **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed.
 
@@ -48,7 +48,7 @@ After this migration, users should install via npm:
 
 ### Step 1: Understand the Breaking Changes
 
-Between v0.5.4 and v0.6.0:
+Between v0.5.4 and v0.8.17:
 
 #### Major Architectural Changes
 - **TypeScript rewrite:** Entire codebase ported from JavaScript to TypeScript (strict mode)
@@ -76,9 +76,9 @@ If you have an existing Squad v0.5.4 project:
 # Remove old .squad directory
 rm -rf .squad/
 
-# Initialize fresh v0.6.0 project structure
+# Initialize fresh v0.8.17 project structure
 squad init
-# This creates the new .squad/ directory structure compatible with v0.6.0
+# This creates the new .squad/ directory structure compatible with v0.8.17
 ```
 
 #### Option B: Migrate Existing Configuration
@@ -96,13 +96,13 @@ If you need to preserve your v0.5.4 Squad configuration:
    mv .squad .squad.v0.5.4.backup
    ```
 
-3. **Initialize v0.6.0 structure**:
+3. **Initialize v0.8.17 structure**:
    ```bash
    squad init
    ```
 
 4. **Manually migrate critical state**:
-   - Map your v0.5.4 roster → new v0.6.0 `.squad/team.md` format
+   - Map your v0.5.4 roster → new v0.8.17 `.squad/team.md` format
    - Migrate decisions from v0.5.4 → new `.squad/decisions.md` append-only format
    - Recreate agent definitions in new `.squad/agents/{name}/charter.md` format
 
@@ -122,11 +122,11 @@ npm install -g @bradygaster/squad-cli
 # Global install (recommended)
 npm install -g @bradygaster/squad-cli
 squad --version
-# Output: v0.6.0
+# Output: v0.8.17
 
 # OR use npx without install
 npx @bradygaster/squad-cli --version
-# Output: v0.6.0
+# Output: v0.8.17
 
 # For insider builds (pre-release)
 npm install -g @bradygaster/squad-cli@insider
@@ -143,12 +143,12 @@ squad --version
 
 ### Step 4: Verify the Upgrade
 
-After switching to v0.6.0, verify your installation:
+After switching to v0.8.17, verify your installation:
 
 ```bash
 # Check version (npm method)
 squad --version
-# Expected: v0.6.0
+# Expected: v0.8.17
 
 # Run doctor to check environment
 squad doctor
@@ -167,7 +167,7 @@ If your project references Squad in docs or CI/CD:
 ```json
 {
   "devDependencies": {
-    "@bradygaster/squad-cli": "^0.6.0"
+    "@bradygaster/squad-cli": "^0.8.17"
   }
 }
 ```
@@ -194,7 +194,7 @@ alias squad='squad'  # (npm install -g @bradygaster/squad-cli)
 
 #### "Old .squad directory format not recognized"
 - Delete or rename `.squad/` to `.squad.bak`
-- Run `squad init` to create v0.6.0 structure
+- Run `squad init` to create v0.8.17 structure
 - Manually migrate important decisions/roster if needed
 
 #### "Command not found after install"
@@ -203,11 +203,11 @@ alias squad='squad'  # (npm install -g @bradygaster/squad-cli)
 - For persistent installation, use npm: `npm install -g @bradygaster/squad-cli`
 
 #### "My project configuration was lost after upgrade"
-- v0.5.4 and v0.6.0 use incompatible `.squad/` formats
+- v0.5.4 and v0.8.17 use incompatible `.squad/` formats
 - Pre-upgrade: manually export important configuration
 - See **Option B: Migrate Existing Configuration** above
 
-### What's New in v0.6.0
+### What's New in v0.8.17
 
 After upgrading, you'll have access to:
 
@@ -409,7 +409,7 @@ $versions | Format-Table -AutoSize
 
 ### Update Version to 0.8.17
 
-**Rationale:** Public distribution targets v0.6.0.
+**Rationale:** Public distribution targets v0.8.17.
 
 Update all three files:
 
@@ -475,7 +475,7 @@ npm run lint
 git add package.json packages/squad-sdk/package.json packages/squad-cli/package.json package-lock.json
 git commit -m "chore: version bump to 0.8.17 for public migration
 
-Squad-pr v0.6.0 → v0.6.0 (stable release target)
+Squad-pr v0.8.17 → v0.8.17 (stable release target)
 This commit prepares the codebase for migration to bradygaster/squad repo."
 ```
 
@@ -697,10 +697,10 @@ Two options, with **Option A recommended:**
 - Both .gitignore files, .github/ workflows, etc. must be manually resolved
 
 ```powershell
-git merge squad-pr/main --allow-unrelated-histories -m "Merge squad-pr v0.6.0 into public squad repo
+git merge squad-pr/main --allow-unrelated-histories -m "Merge squad-pr v0.8.17 into public squad repo
 
-This merge brings private development (v0.6.0) into the public
-repository as v0.6.0.
+This merge brings private development (v0.8.17) into the public
+repository as v0.8.17.
 
 Unrelated histories allowed due to repos diverging from separate starting points.
 See .squad/decisions.md and .squad/agents/kobayashi/history.md for context."
@@ -716,7 +716,7 @@ If you want a clean slate without both histories:
 # This approach: take all squad-pr files, discard public repo content
 git checkout --theirs squad-pr/main -- .
 git add -A
-git commit -m "Replace content with squad-pr v0.6.0"
+git commit -m "Replace content with squad-pr v0.8.17"
 ```
 
 **⚠️ Not recommended** — loses public repo history. Use only if Brady explicitly directs.
@@ -904,10 +904,10 @@ git status
 # All modified files should be in "staged" section
 
 # Complete the merge
-git commit -m "Merge squad-pr v0.6.0 into public squad
+git commit -m "Merge squad-pr v0.8.17 into public squad
 
 All conflicts resolved:
-- package.json versions: took squad-pr v0.6.0
+- package.json versions: took squad-pr v0.8.17
 - .gitignore: merged both public and private rules
 - .github/workflows: took squad-pr versions
 - README.md: took squad-pr dev-facing version
@@ -969,7 +969,7 @@ node cli.js --version
 ```powershell
 # If squad has a prerelease banner in CLI output:
 node cli.js
-# Expected: Output includes "v0.6.0" or similar warning
+# Expected: Output includes "v0.8.17" or similar warning
 
 # Check for spinner (TUI health check)
 node cli.js 2>&1 | grep -E "spinner|⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏"
@@ -1031,17 +1031,17 @@ gh api repos/bradygaster/squad/branches/migration --json name,commit
 
 ```powershell
 gh pr create \
-  --title "v0.6.0: Merge squad-pr private development into public" \
+  --title "v0.8.17: Merge squad-pr private development into public" \
   --body "## Overview
 
-This PR merges the private squad-pr development (v0.6.0) into the public squad repository as v0.6.0.
+This PR merges the private squad-pr development (v0.8.17) into the public squad repository as v0.8.17.
 
 ## What's New
 - [Summarize major features added in v0.8.6 development cycle]
 - [e.g., Remote Squad Mode, improved CLI UX, streaming diagnostics, etc.]
 
 ## Breaking Changes
-- [List any breaking changes from v0.5.4 → v0.6.0]
+- [List any breaking changes from v0.5.4 → v0.8.17]
 - [e.g., New CLI interface, changed config structure, etc.]
 
 ## Migration Notes
@@ -1127,19 +1127,19 @@ git pull origin main
 
 # Verify merge commit is present
 git --no-pager log --oneline -3
-# Expected: Latest commit is the merge commit with message about v0.6.0
+# Expected: Latest commit is the merge commit with message about v0.8.17
 ```
 
 ### Create Release Tag
 
 ```powershell
-git tag v0.6.0
+git tag v0.8.17
 
 # Push tag to origin
-git push origin v0.6.0
+git push origin v0.8.17
 
 # Verify tag created
-git --no-pager tag -v v0.6.0
+git --no-pager tag -v v0.8.17
 # Expected: Tag points to HEAD (merge commit)
 ```
 
@@ -1153,7 +1153,7 @@ Create a formal GitHub Release for the tag.
 
 ```powershell
 $releaseNotes = @"
-# Squad v0.6.0 — Public Beta
+# Squad v0.8.17 — Public Beta
 
 ## 🎉 What's New
 
@@ -1174,7 +1174,7 @@ $releaseNotes = @"
 
 ## ⚠️ Pre-Release Status
 
-**This is a v0.6.0.** Not recommended for production yet.
+**This is a v0.8.17.** Not recommended for production yet.
 
 ### Known Limitations
 - [Known issue 1]
@@ -1258,8 +1258,8 @@ $releaseNotes | Set-Content release-notes.txt
 ### Create Release
 
 ```powershell
-gh release create v0.6.0 \
-  --title "v0.6.0 — Public Beta" \
+gh release create v0.8.17 \
+  --title "v0.8.17 — Public Beta" \
   --prerelease \
   --notes-file release-notes.txt
 
@@ -1269,12 +1269,12 @@ gh release create v0.6.0 \
 ### Verify Release
 
 ```powershell
-gh release view v0.6.0
+gh release view v0.8.17
 # Expected: Shows release details (title, prerelease tag, body)
 
 # Check GitHub
-gh api repos/bradygaster/squad/releases/tags/v0.6.0 --json name,prerelease
-# Expected: {"name":"v0.6.0", "prerelease":true}
+gh api repos/bradygaster/squad/releases/tags/v0.8.17 --json name,prerelease
+# Expected: {"name":"v0.8.17", "prerelease":true}
 ```
 
 ---
@@ -1289,8 +1289,8 @@ Test installation from the tag (simulating public install):
 
 ```powershell
 # Create a fresh test directory
-mkdir $HOME\squad-test-v0.6.0
-cd $HOME\squad-test-v0.6.0
+mkdir $HOME\squad-test-v0.8.17
+cd $HOME\squad-test-v0.8.17
 
 # Install via npm (the only supported distribution method)
 npm install -g @bradygaster/squad-cli@0.8.17
@@ -1302,7 +1302,7 @@ npm install -g @bradygaster/squad-cli@0.8.17
 
 ```powershell
 squad --version
-# Expected output: v0.6.0
+# Expected output: v0.8.17
 
 squad --help 2>&1 | head -20
 # Expected: Help text, no errors
@@ -1321,7 +1321,7 @@ squad doctor
 
 ```powershell
 cd ..
-rm -Recurse -Force squad-test-v0.6.0
+rm -Recurse -Force squad-test-v0.8.17
 ```
 
 ---
@@ -1352,25 +1352,25 @@ cd C:\src\squad-pr
 # Path: .squad/decisions/inbox/kobayashi-public-migration.md
 
 $decision = @"
-# Decision: v0.6.0 Public Migration Complete
+# Decision: v0.8.17 Public Migration Complete
 
 **Date:** [Current Date]
 **Actor:** Kobayashi (Git & Release)
 
 ## What
-Executed migration of squad-pr (private, v0.8.6.x) → squad (public, v0.6.0).
+Executed migration of squad-pr (private, v0.8.6.x) → squad (public, v0.8.17).
 
 ## Process
 1. Version prepared: 0.8.6.x → 0.8.17
 2. Merged via \`git merge --allow-unrelated-histories\`
 3. All conflicts resolved (package.json, .gitignore, workflows, docs)
 4. Created PR #[NUMBER], CI passed
-5. Merged to main, tagged v0.6.0
+5. Merged to main, tagged v0.8.17
 6. Created GitHub Release
 7. Validated installation and CLI
 
 ## Outcome
-✅ Public Squad repo now at v0.6.0
+✅ Public Squad repo now at v0.8.17
 ✅ GitHub release published and accessible
 ✅ npx @bradygaster/squad-cli works
 ✅ Beta testing ready
@@ -1383,7 +1383,7 @@ See .squad/log/[timestamp]-migration-execution.md for detailed run log.
 
 $decision | Set-Content ".squad/decisions/inbox/kobayashi-public-migration.md"
 git add ".squad/decisions/inbox/kobayashi-public-migration.md"
-git commit -m "doc: record v0.6.0 public migration decision"
+git commit -m "doc: record v0.8.17 public migration decision"
 ```
 
 ---
@@ -1496,14 +1496,14 @@ git log --oneline -3
 
 ```powershell
 # Delete local tag
-git tag -d v0.6.0
+git tag -d v0.8.17
 
 # Delete remote tag
-git push origin --delete v0.6.0
+git push origin --delete v0.8.17
 
 # Verify
 git tag -l
-# Expected: v0.6.0 not listed
+# Expected: v0.8.17 not listed
 ```
 
 ### Phase 8: After Release Published
@@ -1513,11 +1513,11 @@ git tag -l
 ```powershell
 # Delete release on GitHub (via web UI)
 # or via CLI:
-gh release delete v0.6.0
+gh release delete v0.8.17
 
 # Delete tag
-git tag -d v0.6.0
-git push origin --delete v0.6.0
+git tag -d v0.8.17
+git push origin --delete v0.8.17
 
 # Restart from Phase 6 if needed
 ```
@@ -1535,8 +1535,8 @@ git reset --hard origin/main
 
 # Delete all migration artifacts
 git push origin --delete migration 2>/dev/null
-git tag -d v0.6.0 2>/dev/null
-git push origin --delete v0.6.0 2>/dev/null
+git tag -d v0.8.17 2>/dev/null
+git push origin --delete v0.8.17 2>/dev/null
 
 # Delete release on GitHub (manual via web)
 
@@ -1646,7 +1646,7 @@ Print this checklist. Brady must explicitly say the word "banana" before executi
 
 ## Conclusion
 
-This migration brings v0.6.0 development (squad-pr) into the public repository as v0.6.0. The approach follows Brady's direction: set up remote, create migration branch, merge with conflict resolution, push PR, merge and tag, create release.
+This migration brings v0.8.17 development (squad-pr) into the public repository as v0.8.17. The approach follows Brady's direction: set up remote, create migration branch, merge with conflict resolution, push PR, merge and tag, create release.
 
 **Key principles:**
 - Zero execution until Brady says "banana"
