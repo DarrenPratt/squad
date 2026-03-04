@@ -119,11 +119,28 @@ This is the biggest jump. The codebase was rewritten in TypeScript, the `.squad/
 
 6. **Manually migrate your customizations.** Open `.squad-v054-backup/` and copy over any custom agent charters, team roster entries, or decisions into the new `.squad/` directory structure. The new format uses Markdown files (not JSON).
 
-7. **Verify:**
+   **Which files are safe to copy?** Use this table as your guide:
+
+   | Directory/File | Safe to copy? | Notes |
+   |---|---|---|
+   | `agents/` | ✅ Yes — all of them | Including scribe and ralph — their history is valuable context |
+   | `decisions.md` | ✅ Yes | Your team's decision ledger |
+   | `decisions/` | ✅ Yes | Including `inbox/` |
+   | `routing.md` | ✅ Yes | Your routing rules |
+   | `team.md` | ✅ Yes | Your roster |
+   | `skills/` | ✅ Yes | Learned patterns |
+   | `casting/` | ❌ Skip | Regenerated automatically on first run |
+   | `templates/` | ❌ Skip | Overwritten by `squad upgrade` |
+   | `log/` | 🟡 Optional | Diagnostic archive — no harm copying, but not required |
+   | `orchestration-log/` | 🟡 Optional | Same as log/ |
+
+7. **Validate with squad doctor:**
 
    ```bash
    squad doctor
    ```
+
+   This runs 9 checks to ensure your `.squad/` directory is healthy after migration. All checks should pass before you consider the upgrade complete.
 
 ### Key Format Changes
 
