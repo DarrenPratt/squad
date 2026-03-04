@@ -539,3 +539,24 @@ Implemented Phase 1 of consult mode — allows personal squad to "consult" on ex
 - No contradictory statements about what was shipped vs. rejected
 
 **Result: CLEAN** (1 correction made for clarity, no data integrity issues)
+
+---
+
+### 2026-03-XX: Fix Missing Barrel Exports in squad-sdk index.ts
+**Requested by:** Brady
+
+The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-exports for symbols the CLI imports: `safeTimestamp`, `initSquadTelemetry`, `TIMEOUTS`, `recordAgentSpawn`, `recordAgentDuration`, `recordAgentError`, `recordAgentDestroy`, `getMeter`, and `RuntimeEventBus`.
+
+**Changes (1 file, 7 insertions):**
+- Added named exports for `MODELS`, `TIMEOUTS`, `AGENT_ROLES` from `runtime/constants.js` (used named instead of wildcard to avoid `AgentRole` collision with `casting/index.js`)
+- Added `export *` for `runtime/otel-init.js` and `runtime/otel-metrics.js`
+- Added named exports `getMeter`, `getTracer` from `runtime/otel.js` (wildcard would leak internal OTel types)
+- Added `safeTimestamp` from `utils/safe-timestamp.js`
+- Added `EventBus as RuntimeEventBus` alias from `runtime/event-bus.js`
+
+**Verification:** `tsc --noEmit` passes clean for squad-sdk. Full build shows only pre-existing squad-cli errors (node-pty, rc.ts, consult mode symbols).
+
+## Learnings
+
+- Wildcard `export *` from `runtime/constants.js` causes TS2308 collision with `AgentRole` already exported from `casting/index.js` — use named exports when barrel already re-exports a module with overlapping symbol names
+- Only use named exports for `otel.ts` to avoid leaking internal OTel SDK types into the public API surface
