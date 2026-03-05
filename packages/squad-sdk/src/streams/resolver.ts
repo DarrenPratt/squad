@@ -4,8 +4,8 @@
  * Resolution order:
  *   1. SQUAD_TEAM env var → look up in workstreams config
  *   2. .squad-workstream file (gitignored) → contains workstream name
- *   3. squad.config.ts → workstreams.active field (via .squad/workstreams.json)
- *   4. null (no workstream — single-squad mode)
+ *   3. If exactly one workstream is defined in the config, auto-select that workstream
+ *   4. null (no active workstream — single-squad mode / no workstreams)
  *
  * @module streams/resolver
  */
@@ -28,19 +28,73 @@ export function loadWorkstreamsConfig(squadRoot: string): WorkstreamConfig | nul
 
   try {
     const raw = readFileSync(configPath, 'utf-8');
-    const parsed = JSON.parse(raw) as WorkstreamConfig;
+    const rawConfig = JSON.parse(raw) as unknown;
 
-    // Basic validation
-    if (!parsed.workstreams || !Array.isArray(parsed.workstreams)) {
+    if (!rawConfig || typeof rawConfig !== 'object') {
       return null;
     }
 
-    // Ensure defaultWorkflow has a value
-    if (!parsed.defaultWorkflow) {
-      parsed.defaultWorkflow = 'branch-per-issue';
+    const configLike = rawConfig as { defaultWorkflow?: unknown; workstreams?: unknown };
+
+    // Derive a sane defaultWorkflow value
+    const validWorkflows = ['branch-per-issue', 'direct'] as const;
+    const rawWorkflow =
+      typeof configLike.defaultWorkflow === 'string' && configLike.defaultWorkflow.trim() !== ''
+        ? configLike.defaultWorkflow
+        : 'branch-per-issue';
+    const defaultWorkflow: 'branch-per-issue' | 'direct' =
+      validWorkflows.includes(rawWorkflow as typeof validWorkflows[number])
+        ? (rawWorkflow as 'branch-per-issue' | 'direct')
+        : 'branch-per-issue';
+
+    const workstreamsRaw = configLike.workstreams;
+    if (!Array.isArray(workstreamsRaw)) {
+      return null;
     }
 
-    return parsed;
+    const workstreams: WorkstreamDefinition[] = workstreamsRaw
+      .filter(entry => entry && typeof entry === 'object')
+      .map(entry => {
+        const e = entry as {
+          name?: unknown;
+          labelFilter?: unknown;
+          folderScope?: unknown;
+          workflow?: unknown;
+          description?: unknown;
+        };
+
+        if (typeof e.name !== 'string' || typeof e.labelFilter !== 'string') {
+          return null;
+        }
+
+        const normalized: Record<string, unknown> = {
+          name: e.name,
+          labelFilter: e.labelFilter,
+        };
+
+        if (Array.isArray(e.folderScope) && e.folderScope.every(item => typeof item === 'string')) {
+          normalized.folderScope = e.folderScope;
+        }
+
+        if (typeof e.workflow === 'string' && e.workflow.trim() !== '') {
+          normalized.workflow = e.workflow;
+        } else {
+          normalized.workflow = defaultWorkflow;
+        }
+
+        if (typeof e.description === 'string') {
+          normalized.description = e.description;
+        }
+
+        return normalized as unknown as WorkstreamDefinition;
+      })
+      .filter((s): s is WorkstreamDefinition => s !== null);
+
+    if (workstreams.length === 0) {
+      return null;
+    }
+
+    return { defaultWorkflow, workstreams };
   } catch {
     return null;
   }
@@ -112,7 +166,7 @@ export function resolveWorkstream(squadRoot: string): ResolvedWorkstream | null 
     }
   }
 
-  // 3. workstreams.json with an "active" field (convention: first workstream if only one)
+  // 3. If exactly one workstream is defined, auto-select it
   if (config && config.workstreams.length === 1) {
     const def = config.workstreams[0]!;
     return { name: def.name, definition: def, source: 'config' };

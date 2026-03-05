@@ -875,6 +875,7 @@ ${projectDescription ? `- **Description:** ${projectDescription}\n` : ''}- **Cre
         + '# Squad: workstream activation file (local to this machine)\n'
         + workstreamIgnoreEntry + '\n';
       await appendFile(gitignorePath, block);
+      createdFiles.push(toRelativePath(gitignorePath));
     }
   }
 

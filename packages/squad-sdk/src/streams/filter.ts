@@ -2,7 +2,7 @@
  * Workstream-Aware Issue Filtering
  *
  * Filters GitHub issues to only those matching a workstream's labelFilter.
- * Used by Ralph during triage to scope work to the active workstream.
+ * Intended to scope work to the active workstream during triage.
  *
  * @module streams/filter
  */

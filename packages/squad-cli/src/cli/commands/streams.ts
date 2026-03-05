@@ -9,7 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { loadWorkstreamsConfig, resolveWorkstream } from '@bradygaster/squad-sdk';
 import type { WorkstreamDefinition } from '@bradygaster/squad-sdk';
 
@@ -107,10 +107,12 @@ function showWorkstreamStatus(cwd: string): void {
 
     // Try to get PR and branch info via gh CLI
     try {
-      const prOutput = execSync(
-        `gh pr list --label "${workstream.labelFilter}" --json number,title,state --limit 5`,
+      const result = spawnSync(
+        'gh',
+        ['pr', 'list', '--label', workstream.labelFilter, '--json', 'number,title,state', '--limit', '5'],
         { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
       );
+      const prOutput = result.stdout ?? '';
       const prs = JSON.parse(prOutput) as Array<{ number: number; title: string; state: string }>;
       if (prs.length > 0) {
         console.log(`    ${YELLOW}PRs:${RESET}`);
@@ -126,10 +128,12 @@ function showWorkstreamStatus(cwd: string): void {
 
     // Try to get branch info
     try {
-      const branchOutput = execSync(
-        `git branch --list "*${workstream.name}*"`,
+      const result = spawnSync(
+        'git',
+        ['branch', '--list', `*${workstream.name}*`],
         { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
       );
+      const branchOutput = result.stdout ?? '';
       const branches = branchOutput.trim().split('\n').filter(Boolean);
       if (branches.length > 0) {
         console.log(`    ${YELLOW}Branches:${RESET}`);

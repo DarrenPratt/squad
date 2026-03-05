@@ -113,14 +113,16 @@ When triggered:
 
 ### Workstream Awareness
 
-On session start, check for workstream context:
-1. Read `SQUAD_TEAM` env var
-2. If set, read `.squad/workstreams.json` and find matching workstream
-3. Apply the workstream's `labelFilter` — Ralph should ONLY pick up issues matching this label
-4. Apply the workstream's `workflow` — if `branch-per-issue`, enforce creating a branch and PR for every issue (never commit directly to main)
-5. Apply `folderScope` — agents should only modify files in these directories
+On session start, resolve workstream context using the Workstream resolver:
+1. Check for a `.squad-workstream` file in the repo root. If present, activate the referenced workstream.
+2. If no `.squad-workstream` is present, read the `SQUAD_TEAM` env var (if set) and resolve the matching workstream from `.squad/workstreams.json`.
+3. If there is exactly one workstream defined in `.squad/workstreams.json` and nothing else selects a workstream, auto-select it.
+4. When a workstream is active:
+   - Apply the workstream's `labelFilter` — Ralph should normally only pick up issues matching this label unless the user explicitly directs otherwise.
+   - Apply the workstream's `workflow` — if `branch-per-issue`, enforce creating a branch and PR for every issue (never commit directly to main).
+   - Apply the workstream's `folderScope` as an advisory focus area: prefer modifying files in these directories, and call out when you intentionally work outside them (e.g., to update shared dependencies or cross-cutting code).
 
-If no workstream is detected, operate in default single-squad mode.
+If no workstream is resolved, operate in default single-squad mode.
 
 ### Issue Awareness
 
