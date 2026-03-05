@@ -7,6 +7,22 @@
 
 ## Learnings
 
+### Phase 1 OTel Readiness Assessment — 2026-03-05T21:37:09Z
+**Status:** 🟢 READY FOR ACTIVATION
+All 8 OTel runtime modules compile cleanly, type-safe, production-ready:
+- `otel-init.ts` ✅ High-level one-call setup
+- `otel-metrics.ts` ✅ 11 metric recording functions
+- `otel-bridge.ts` ✅ EventBus → OTel span mapping
+- `event-bus.ts` ✅ Type-safe pub/sub with error isolation
+- `squad-observer.ts` ✅ File watcher for `.squad/` changes
+- `cost-tracker.ts` ✅ Token/cost aggregation
+- `event-payloads.ts` ✅ Discriminated union event types
+- `telemetry.ts` ✅ Privacy-first opt-in collector
+
+Phase 1 does NOT activate OTel (that's Phase 3). All OTel is dead code until Phase 3. Zero impact on Phase 1 build or tests. Activation path clear: `initSquadTelemetry()` at startup, `shutdown()` on exit. Phase 3 can proceed with confidence — no additional prep needed.
+
+**Team Context:** Keaton scoped, Edie built builders, Fenster built CLI, Hockney wrote 60 tests (all passing), Verbal updated coordinator. Phase 2-4 deferred. All decisions merged.
+
 ### From Beta (carried forward)
 - Copilot CLI vs. Copilot SDK boundary awareness: know which surface you're on
 - Model selection fallback chains: Premium → Standard → Fast → nuclear (omit model param)

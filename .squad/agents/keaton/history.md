@@ -5,6 +5,19 @@
 - **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
 - **Created:** 2026-02-21
 
+## 📌 Phase 1 Completion — 2026-03-05T21:37:09Z
+
+**PHASE 1 SDK-FIRST COMPLETE.** Keaton's scoping decision + Edie's builders + Fenster's CLI + Hockney's tests + Kujan's OTel assessment + Verbal's coordinator update. 6 agents fanned out in parallel.
+
+**Team Cross-Pollination:**
+- **Edie:** Built 8 builder functions + type surface in `packages/squad-sdk/src/builders/`. Zero new deps. Runtime validation included. Type unification: `runtime/config.ts` canonical, deprecated schema.ts.
+- **Fenster:** Implemented `squad build --check` CLI command. Works with `SquadSDKConfig`. Generated files stamped with HTML headers. Wired into cli-entry.ts.
+- **Hockney:** 60 contract-first tests (36 builders, 24 build command). All passing. Stubs in place. Ready for implementation swaps.
+- **Kujan:** OTel readiness: all 8 runtime modules compile cleanly. Phase 3 unblocked. Zero impact on Phase 1.
+- **Verbal:** Coordinator prompt updated with SDK Mode Detection section. Session-start heuristic for `squad/` or `squad.config.ts`. Extends markdown mode without breaking.
+
+**Next:** Phase 2 (scaffolding + markdown generation), Phase 3 (SDK runtime + OTel), Phase 4 (migrations).
+
 ## 📌 Core Context — Keaton's Focus Areas
 
 **Architectural Decisions:** Keaton owns proposal-first workflow, SDK/CLI split design, observability patterns, wave planning and readiness assessments, cleanup audits, public release decisions. Pattern: decisions that compound — each architectural choice makes future features easier.

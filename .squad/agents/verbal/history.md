@@ -25,6 +25,16 @@
 - Exported all functions and types from `src/cli/shell/index.ts`
 - PR #286 → bradygaster/dev
 
+### Phase 1 SDK Mode Detection — 2026-03-05T21:37:09Z
+- Updated `.github/agents/squad.agent.md` with SDK Mode Detection section
+- Detection heuristic: session-start check for `squad/` directory or `squad.config.ts` at project root
+- When detected: (1) structural changes go to `squad/*.ts` (not `.squad/*.md`), (2) after config changes, remind user to run `squad build`, (3) prefer typed builders over markdown parsing
+- SDK mode *extends* markdown mode (never breaks existing projects)
+- All agents inherit awareness through coordinator logic
+- Ready for Phase 2+ when SDK projects start using builders
+
+**Team Context:** Keaton scoped Phase 1 (5 success criteria). Edie built 8 builders. Fenster built `squad build --check`. Hockney wrote 60 tests (all passing). Kujan cleared OTel. Verbal updated coordinator. All decisions merged to decisions.md. Ready for Phase 2 scaffolding.
+
 ### #313: Remote Squad Mode — Coordinator Awareness
 - Updated `.github/agents/squad.agent.md` Worktree Awareness section with third resolution strategy: remote squad mode via `.squad/config.json` `teamRoot` field
 - Added `PROJECT_ROOT` variable to spawn template alongside `TEAM_ROOT`, with scope explanation (identity vs. project-local paths)

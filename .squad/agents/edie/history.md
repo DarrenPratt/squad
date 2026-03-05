@@ -1,5 +1,8 @@
 # Project Context
 
+📌 Team update (2026-03-05T21:37:09Z): Phase 1 SDK-First fan-out complete — decided by Keaton
+Phase 1 SDK-First Phase 1 shipping in v0.8.21. Keaton scoped, Edie built builders, Fenster built CLI command, Hockney wrote tests (60 all passing), Kujan cleared OTel for Phase 3, Verbal updated coordinator. Decisions merged, inbox cleared, orchestration logs written.
+
 📌 Team update (2026-02-23T07:24Z): Docs overhaul directive and publication pause — decided by Brady
 Brady has issued consolidated directive on docs redesign: trim scope, adopt lighthearted voice (match original Squad beta tone), prioritize first-experience over tech depth, consolidate references, and pause all live publication until explicit go-ahead. All docs should be brief, prompt-first, action-oriented, and human-toned. This replaces stuffy enterprise-style documentation.
 
