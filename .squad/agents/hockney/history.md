@@ -803,3 +803,63 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 - **Key finding:** The SDK dist was stale (still had old `.squad-templates` path). Source was already updated but `npm run build` hadn't been run. Rebuilt SDK to verify test passes.
 - **Pre-existing failure:** Line 94 gitattributes content mismatch (unrelated, not introduced by this change).
 - **Lesson:** On Windows, use `join(root, '.squad', 'templates')` not `join(root, '.squad/templates')` — forward-slash segments in `join` args work on Node but it's better practice to use separate args.
+
+### Workflow filtering test coverage review — Issue #201 (2026-03-04)
+**Status:** Complete — validated issue #201 workflow filter branch.
+**Context:** Only 4 FRAMEWORK_WORKFLOWS now installed by `squad init` (heartbeat, triage, issue-assign, sync-labels). 8 CI/CD workflows (ci, preview, release, docs, insider-release, label-enforce, main-guard, promote) NOT installed until `squad upgrade`.
+**Test files reviewed:**
+1. `test/workflows.test.js` (CJS, NOT run by vitest — only used for manual testing)
+2. `test/cli/init.test.ts` (TypeScript, vitest runs this)
+3. `test/cli/upgrade.test.ts` (TypeScript, vitest runs this)
+
+**Findings:**
+
+**workflows.test.js (CJS, NOT executed by vitest):**
+- ✅ Correctly defines `FRAMEWORK_WORKFLOWS` (4 files) and `CI_CD_WORKFLOWS` (3 files: ci, preview, release)
+- ✅ Tests split: init copies FRAMEWORK_WORKFLOWS, NOT CI_CD_WORKFLOWS
+- ✅ Upgrade still copies CI/CD workflows (via templates.ts TEMPLATE_MANIFEST)
+- ⚠️ Line 165 test "upgrade overwrites stale workflow content" — calls `initSquad(tmpDir)` (which no longer copies CI/CD), manually writes stale file to first available CI/CD workflow path, then runs upgrade. **This test still passes** because upgrade DOES copy CI/CD workflows.
+- ⚠️ `runSquad([], dir)` in this test calls the built CLI (`index.js`) — runs actual init logic. Test structure is sound.
+
+**init.test.ts (vitest, line 129):**
+- Line 136: `expect(ymlFiles.length).toBeGreaterThan(0)` — WEAK. Passes with 4 files OR 12 files OR 1 file. Would NOT catch regression where 0 files installed.
+- ❌ **Gap:** No assertion that exactly 4 framework workflows are installed.
+- ❌ **Gap:** No assertion that CI/CD workflows are NOT installed.
+- ✅ Test does verify workflow directory exists and contains .yml files.
+
+**upgrade.test.ts (vitest, line 94):**
+- Line 102: `expect(result.filesUpdated.some(f => f.includes('workflows'))).toBe(true)` — WEAK. This passes because upgrade touches workflows (CI/CD via templates.ts).
+- ⚠️ Test doesn't verify WHICH workflows are updated. Could pass if only 1 workflow copied.
+- ✅ Test does verify upgrade returns workflow updates in filesUpdated array.
+
+**Coverage gaps identified:**
+1. **init.test.ts needs specific assertions:**
+   - Assert exactly 4 FRAMEWORK_WORKFLOWS present after init
+   - Assert CI/CD workflows (ci, preview, release, docs, etc.) are ABSENT after init
+   - Assert workflow content is valid YAML
+2. **upgrade.test.ts needs specific assertions:**
+   - Assert CI/CD workflows are present AFTER upgrade
+   - Assert count of upgraded workflow files matches TEMPLATE_MANIFEST entries
+3. **No regression protection:** If init.ts accidentally clears FRAMEWORK_WORKFLOWS array, init.test.ts line 136 still passes (empty array > 0 = false, test would fail — OK). But if it installs 1 wrong file, test passes.
+
+**Risk assessment:**
+- **workflows.test.js (CJS):** Thorough, but NOT executed by vitest. Only runs via manual `node --test test/workflows.test.js`.
+- **vitest suite (init + upgrade):** Weak assertions. Would NOT catch:
+  - Wrong workflows installed
+  - Extra CI/CD files leaked into init
+  - Missing framework workflows
+- **Net coverage:** ⚠️ Adequate for smoke testing, inadequate for regression protection.
+
+**Recommendation:** APPROVED WITH NOTES — change is correct, but test coverage should be strengthened in a follow-up. Vitest suite needs explicit workflow name assertions.
+📌 Team update (2026-03-05T10-35-50Z): PR #201 workflow filter approved by all reviewers — framework/scaffolding distinction, implementation pattern validated, test coverage noted — decided by Keaton, Fenster, Hockney, Edie
+
+## Learnings
+
+**2026-03-05: Strengthened init workflow test for issue #201**
+- Replaced weak test `expect(ymlFiles.length).toBeGreaterThan(0)` with two focused tests
+- Test 1: Verifies exactly 4 framework workflows ARE installed (squad-heartbeat.yml, squad-triage.yml, squad-issue-assign.yml, sync-squad-labels.yml)
+- Test 2: Verifies 8 CI/CD workflows are NOT installed (squad-ci.yml, squad-release.yml, squad-docs.yml, squad-insider-release.yml, squad-preview.yml, squad-promote.yml, squad-main-guard.yml, squad-label-enforce.yml)
+- Both tests now use explicit `existsSync()` checks per file instead of counting
+- Removed conditional guard (`if existsSync`) — directory should always exist post-init
+- Tests pass with clear ✓ indicators for each assertion
+- **Key lesson:** Positive AND negative assertions catch regressions. Testing "what should be there" AND "what should NOT be there" provides full coverage against accidental leakage or omission.

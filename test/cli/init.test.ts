@@ -126,14 +126,42 @@ describe('CLI: init command', () => {
     expect(skills.length).toBeGreaterThan(0);
   });
 
-  it('should copy workflow files to .github/workflows/', async () => {
+  it('should install exactly the 4 framework workflows', async () => {
     await runInit(TEST_ROOT);
     
     const workflowsPath = join(TEST_ROOT, '.github', 'workflows');
-    if (existsSync(workflowsPath)) {
-      const files = await readdir(workflowsPath);
-      const ymlFiles = files.filter(f => f.endsWith('.yml'));
-      expect(ymlFiles.length).toBeGreaterThan(0);
+    expect(existsSync(workflowsPath)).toBe(true);
+    
+    const frameworkWorkflows = [
+      'squad-heartbeat.yml',
+      'squad-triage.yml',
+      'squad-issue-assign.yml',
+      'sync-squad-labels.yml'
+    ];
+    
+    for (const workflow of frameworkWorkflows) {
+      expect(existsSync(join(workflowsPath, workflow))).toBe(true);
+    }
+  });
+
+  it('should NOT install CI/CD workflows', async () => {
+    await runInit(TEST_ROOT);
+    
+    const workflowsPath = join(TEST_ROOT, '.github', 'workflows');
+    
+    const cicdWorkflows = [
+      'squad-ci.yml',
+      'squad-release.yml',
+      'squad-docs.yml',
+      'squad-insider-release.yml',
+      'squad-preview.yml',
+      'squad-promote.yml',
+      'squad-main-guard.yml',
+      'squad-label-enforce.yml'
+    ];
+    
+    for (const workflow of cicdWorkflows) {
+      expect(existsSync(join(workflowsPath, workflow))).toBe(false);
     }
   });
 

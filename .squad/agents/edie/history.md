@@ -175,3 +175,16 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - No intermediate states recorded as final (except the above version ref).
 - All decisions match .squad/decisions.md consensus.
 - Confidence: High. History now reflects ground truth for future spawns.
+
+### Workflow filter type validation — #201 investigation
+- Validated PR `williamhallatt/201-investigate-actions-install` for TypeScript correctness
+- Change: `FRAMEWORK_WORKFLOWS` array filters workflows to only Squad framework files (4 entries)
+- **Type inference:** `const FRAMEWORK_WORKFLOWS = [...]` correctly infers as `string[]`. `Array.prototype.includes(value: string)` accepts `string` from `readdirSync().filter()` with zero issues
+- **Build:** `npm run build` passes cleanly with zero errors. All `.d.ts` files emit correctly
+- **Lint:** `npm run lint` (noEmit check) passes cleanly
+- **Strict mode compliance:** Root tsconfig has `strict: true` + `noUncheckedIndexedAccess: true`. The constant is module-scoped (not exported), correctly typed, and `.includes()` has no indexed access concern
+- **ESM:** Package uses `"type": "module"`. Constant placement is correct for ESM — no side effects, no hoisting issues
+- **Alternative considered:** `as const` would narrow to tuple literals `readonly ['squad-heartbeat.yml', ...]`, making `.includes()` require literal types (not suitable here since `readdirSync()` returns `string[]`)
+- **Testability:** Constant is module-scoped, not exported. For testing, prefer integration tests that verify workflow installation behavior rather than unit-testing the constant
+- **Verdict:** APPROVED. Type system is correct, build is clean, no `noUncheckedIndexedAccess` violations
+📌 Team update (2026-03-05T10-35-50Z): PR #201 workflow filter approved by all reviewers — framework/scaffolding distinction, implementation pattern validated, test coverage noted — decided by Keaton, Fenster, Hockney, Edie

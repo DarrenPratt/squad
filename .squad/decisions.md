@@ -2002,3 +2002,548 @@ This is low-effort, high-value — a broken link on the GitHub Pages site erodes
 **Action Required:** Brady to decide: keep origin/insiders (matches decision) + delete origin/insider, or keep origin/insider and delete origin/insiders.
 **Status:** Infrastructure ready. Awaiting final branch naming confirmation.
 
+# Decision — Workflow Install Filter Architecture (#201)
+
+**Date:** 2026-03-05  
+**Author:** Keaton (Lead)  
+**Context:** PR review for issue #201 fix (workflow install filter)
+
+## Summary
+
+Approved PR that filters `squad init` to install only 4 framework workflows (squad-heartbeat, squad-issue-assign, squad-triage, sync-squad-labels), excluding 8 generic CI/CD scaffolding workflows (squad-ci, squad-release, etc.). Classification is correct. Hard exclusion (no flag) is the right architectural call.
+
+## Decision
+
+**Adopt the "framework vs. scaffolding" distinction for workflow installation:**
+
+- **Framework workflows** (always installed by init): Issue/label automation that Squad needs to function (heartbeat, triage, assignment, label sync)
+- **Scaffolding workflows** (opt-in via manual copy or upgrade): Build/release/deploy templates that are project-specific (CI, release, preview, docs, etc.)
+
+**Rationale:**
+1. CI/CD workflows are project-specific (npm vs. Python vs. Go). Generic templates aren't production-ready for most users.
+2. Users upgrading from versions before this fix already have all 12 workflows — `squad upgrade` continues to update them. This maintains backward compatibility.
+3. New users get minimal working Squad infrastructure. They can copy scaffolding from `.squad/templates/workflows/` if needed.
+
+## Known Trade-Off
+
+**`squad upgrade` behavior is NOT aligned with this filter.** Current architecture:
+- `squad init` (init.ts): Installs 4 framework workflows only
+- `squad upgrade` (upgrade.ts lines 409–422): Copies ALL 12 workflows
+
+**Implication:** Users who manually delete unwanted workflows (e.g., squad-ci.yml) will see them restored on every upgrade.
+
+**Why this is acceptable for now:**
+- The "right" fix (user preference in `.squad/config.json` to opt out of specific workflows) is future scope, not blocking.
+- Existing users are already on this path (they have all 12). New users won't be surprised (they start with 4).
+- Upgrade is Squad-owned territory (overwriteOnUpgrade: true) — users expect Squad to refresh its own workflows.
+
+**Future enhancement:** Let users opt out of specific workflows in `squad upgrade` via config field (e.g., `workflows: { exclude: ["squad-ci.yml", "squad-release.yml"] }`).
+
+## Pattern
+
+When filtering installation lists, distinguish **framework infrastructure** (always needed for the system to function) from **user scaffolding** (customizable, project-specific). Make the policy visible via:
+1. Named constant with JSDoc explanation
+2. Test coverage that verifies both inclusion AND exclusion
+3. Documentation note for users about manual copy path
+
+For workflows specifically:
+- **Framework** = issue/label automation (Squad's operational infrastructure)
+- **Scaffolding** = build/release/deploy (user's project-specific CI/CD)
+# Decision: FRAMEWORK_WORKFLOWS type pattern for filtered installation
+
+**Context:** PR #201 adds `FRAMEWORK_WORKFLOWS` constant to filter which workflow files get installed during `squad init`. Only Squad framework workflows are installed by default; generic CI/CD scaffolding is opt-in.
+
+**Type pattern validated:**
+```typescript
+const FRAMEWORK_WORKFLOWS = [
+  'squad-heartbeat.yml',
+  'squad-issue-assign.yml',
+  'squad-triage.yml',
+  'sync-squad-labels.yml',
+];
+
+// Usage:
+const allWorkflowFiles = readdirSync(workflowsSrc).filter(f => f.endsWith('.yml'));
+const workflowFiles = allWorkflowFiles.filter(f => FRAMEWORK_WORKFLOWS.includes(f));
+```
+
+**Type inference:** `string[]` (correct). `Array.prototype.includes(value: string)` accepts `string` from `readdirSync()`.
+
+**Alternatives considered:**
+- `as const` → Would narrow to `readonly ['squad-heartbeat.yml', ...]`, making `.includes()` require literal types instead of `string`. Not suitable when filtering runtime values from `readdirSync()`.
+- `readonly string[]` → No benefit over inferred `string[]` for module-scoped constant. Array is never mutated.
+
+**Recommendation:** Keep inferred `string[]` for constants used with `.includes()` on runtime `string` values. Use `as const` only when you need literal type narrowing (e.g., discriminated unions, enum-like behavior).
+
+**Testability:** Constant is module-scoped (not exported). Integration tests should verify correct workflow installation behavior, not unit-test the constant itself.
+
+**Build verification:** `npm run build` and `npm run lint` pass cleanly with zero errors.
+
+**Decided by:** Edie  
+**Date:** 2026-03-03  
+**Status:** APPROVED — type pattern is correct, no changes needed
+# Test Coverage Gaps: Workflow Filtering (Issue #201)
+
+**Date:** 2026-03-04  
+**Reviewer:** Hockney (Tester)  
+**Branch:** williamhallatt/201-investigate-actions-install  
+**Status:** Change is correct, tests need strengthening
+
+## Background
+
+Squad init now installs only 4 FRAMEWORK_WORKFLOWS (heartbeat, triage, issue-assign, sync-labels). The 8 CI/CD workflows (ci, preview, release, docs, insider-release, label-enforce, main-guard, promote) are NOT installed until `squad upgrade`.
+
+## Test Coverage Issues
+
+### 1. `test/workflows.test.js` (CJS) — NOT executed by vitest
+
+- **Status:** Comprehensive tests exist but are never run by `npm test`
+- **Issue:** vitest.config.ts includes only `test/**/*.test.ts`, excludes `.js` files
+- **Tests present:**
+  - ✅ Init copies FRAMEWORK_WORKFLOWS
+  - ✅ Init does NOT copy CI/CD workflows
+  - ✅ Upgrade copies CI/CD workflows
+  - ✅ Workflow YAML validity checks
+- **Risk:** If this file goes stale, no one will notice
+
+### 2. `test/cli/init.test.ts` (vitest, line 129-138) — Weak assertions
+
+**Current test:**
+```typescript
+it('should copy workflow files to .github/workflows/', async () => {
+  await runInit(TEST_ROOT);
+  
+  const workflowsPath = join(TEST_ROOT, '.github', 'workflows');
+  if (existsSync(workflowsPath)) {
+    const files = await readdir(workflowsPath);
+    const ymlFiles = files.filter(f => f.endsWith('.yml'));
+    expect(ymlFiles.length).toBeGreaterThan(0);  // ⚠️ WEAK
+  }
+});
+```
+
+**Problems:**
+- Passes with 1 file OR 4 files OR 12 files
+- Does NOT verify which workflows are installed
+- Does NOT verify CI/CD workflows are absent
+
+**Should be:**
+```typescript
+it('should copy only FRAMEWORK_WORKFLOWS to .github/workflows/', async () => {
+  await runInit(TEST_ROOT);
+  
+  const workflowsPath = join(TEST_ROOT, '.github', 'workflows');
+  const files = await readdir(workflowsPath);
+  const ymlFiles = files.filter(f => f.endsWith('.yml'));
+  
+  // Assert exactly 4 framework workflows
+  expect(ymlFiles).toHaveLength(4);
+  expect(ymlFiles).toContain('squad-heartbeat.yml');
+  expect(ymlFiles).toContain('squad-triage.yml');
+  expect(ymlFiles).toContain('squad-issue-assign.yml');
+  expect(ymlFiles).toContain('sync-squad-labels.yml');
+  
+  // Assert CI/CD workflows are NOT installed
+  expect(ymlFiles).not.toContain('squad-ci.yml');
+  expect(ymlFiles).not.toContain('squad-preview.yml');
+  expect(ymlFiles).not.toContain('squad-release.yml');
+});
+```
+
+### 3. `test/cli/upgrade.test.ts` (vitest, line 94-104) — No workflow verification
+
+**Current test:**
+```typescript
+it('should upgrade workflows', async () => {
+  const workflowsDir = join(TEST_ROOT, '.github', 'workflows');
+  
+  if (existsSync(workflowsDir)) {
+    const result = await runUpgrade(TEST_ROOT);
+    expect(result.filesUpdated.some(f => f.includes('workflows'))).toBe(true);  // ⚠️ WEAK
+  }
+});
+```
+
+**Problems:**
+- Does NOT verify which workflows are upgraded
+- Passes if only 1 workflow touched
+- Does NOT verify CI/CD workflows are present after upgrade
+
+**Should be:**
+```typescript
+it('should install CI/CD workflows during upgrade', async () => {
+  await runInit(TEST_ROOT);
+  
+  // Verify framework workflows installed
+  const workflowsDir = join(TEST_ROOT, '.github', 'workflows');
+  let files = await readdir(workflowsDir);
+  expect(files).toHaveLength(4); // Only framework workflows
+  
+  // Run upgrade
+  const result = await runUpgrade(TEST_ROOT);
+  
+  // Verify CI/CD workflows now present
+  files = await readdir(workflowsDir);
+  expect(files.length).toBeGreaterThan(4); // Framework + CI/CD
+  expect(files).toContain('squad-ci.yml');
+  expect(files).toContain('squad-preview.yml');
+  expect(files).toContain('squad-release.yml');
+  
+  // Verify upgrade report includes workflows
+  expect(result.filesUpdated.some(f => f.includes('workflows'))).toBe(true);
+});
+```
+
+## Regressions NOT Caught by Current Tests
+
+1. If `FRAMEWORK_WORKFLOWS` array is accidentally cleared → init.test.ts line 136 would fail (good), but error message would be vague
+2. If init accidentally installs 1 extra CI/CD workflow → init.test.ts still passes
+3. If upgrade skips a CI/CD workflow → upgrade.test.ts still passes
+4. If workflows are invalid YAML → no vitest test catches this (workflows.test.js does, but isn't run)
+
+## Recommendations
+
+### Immediate (for this PR):
+**APPROVED WITH NOTES** — Change is correct, merge it. Tests are adequate for smoke testing.
+
+### Follow-up (separate issue/PR):
+1. **Make workflows.test.js executable by vitest:**
+   - Convert to TypeScript OR
+   - Update vitest.config.ts to include `test/**/*.test.js`
+2. **Strengthen init.test.ts:**
+   - Replace line 136 with explicit workflow name assertions
+   - Add negative assertions for CI/CD workflows
+3. **Strengthen upgrade.test.ts:**
+   - Add workflow count verification
+   - Add explicit CI/CD workflow presence checks
+4. **Add YAML validity test to vitest suite:**
+   - Parse workflow files with a YAML library
+   - Assert required fields (name, on, jobs)
+
+## Impact
+
+- **Current risk:** Medium — Manual testing catches issues, but CI doesn't
+- **With changes:** Low — Automated tests would catch workflow installation regressions
+- **Effort:** 2-4 hours for a focused test improvement task
+
+---
+
+**Decision needed:**
+Should workflows.test.js be converted to TypeScript and integrated into vitest, or should we duplicate its assertions in init.test.ts/upgrade.test.ts?
+# Decision: Workflow Filter Implementation Pattern
+
+**Context:** PR williamhallatt/201 implemented filtering of workflow files during `squad init` to only install Squad-framework workflows (4 files) instead of copying all workflows from templates/.
+
+**Implementation Pattern:**
+```typescript
+// 1. Define framework workflows as module-scope constant
+const FRAMEWORK_WORKFLOWS = [
+  'squad-heartbeat.yml',
+  'squad-issue-assign.yml',
+  'squad-triage.yml',
+  'sync-squad-labels.yml',
+];
+
+// 2. Read disk, filter extensions, then filter to whitelist
+const allWorkflowFiles = readdirSync(workflowsSrc).filter(f => f.endsWith('.yml'));
+const workflowFiles = allWorkflowFiles.filter(f => FRAMEWORK_WORKFLOWS.includes(f));
+
+// 3. Copy loop operates on filtered list
+for (const file of workflowFiles) {
+  // copy logic with skipExisting check
+}
+```
+
+**Why This Pattern:**
+- ✅ **Graceful handling of missing templates**: Filtering happens on disk-present files, so if a framework workflow is missing from templates/, no error is thrown
+- ✅ **Separation of concerns**: SDK layer controls filtering, CLI layer only gates feature on/off (`includeWorkflows: true`)
+- ✅ **Discoverable**: Module-scope constant with clear comment explaining framework vs. opt-in distinction
+- ✅ **Consistent with codebase**: Matches existing `Array.includes()` patterns in init.ts (lines 744, 768)
+- ✅ **Self-documenting**: Variable rename (`workflowFiles` → `allWorkflowFiles` + new filtered `workflowFiles`) makes intent clear
+
+**Alternative Considered:**
+- Using `Set.has()` for filtering — rejected as premature optimization for 4-item array (< 1ms difference)
+
+**Future Enhancement (optional, not blocking):**
+- Log warning if a file in `FRAMEWORK_WORKFLOWS` doesn't exist in templates/ — helps catch template drift during development
+
+**Decided by:** Fenster (implementation review)  
+**Date:** 2026-03-05
+
+---
+
+# Testing Lessons from Migrate Command (57 tests, 5 critical bugs caught)
+
+**By:** Hockney (Tester)  
+**Date:** 2026-03-03  
+**Context:** Code review of migrate-command.test.ts, cast-guard.test.ts, migrate-e2e.test.ts revealed gaps that allowed 5 bugs to slip through or only surface during peer review.
+
+---
+
+## Executive Summary
+
+We wrote 57 tests for the migrate command and caught 5 significant bugs:
+1. **Shell reinit after migrate** — `.first-run` not cleaned after reinit (lifecycle bug)
+2. **Casting registry missing** — SDK wipe didn't recreate registry (state loss)
+3. **config.json survival** — Not in USER_OWNED, nearly lost during wipe (data loss)
+4. **Path traversal** — `--restore` and `--backup-dir` lacked containment checks (security)
+5. **Partial backup rollback** — No `backupComplete` flag prevented destructive recovery (data corruption)
+
+**Root cause pattern:** Tests existed but were category-gapped. We tested the happy path and feature branches but didn't test:
+- Filesystem state machine transitions (what happens *between* steps?)
+- Security boundaries (path containment, symlink traversal)
+- Recovery paths under partial failure (backup completeness + rollback)
+- Integration points (shell lifecycle through migrate, SDK state recreation)
+
+---
+
+## 3 Lessons + Action Items
+
+### 1. **Lifecycle Tests Must Cross CLI Boundaries**
+
+**Gap:** Tests for migrate existed. Tests for shell first-run gating existed. But NO test covered the contract between them: migrate should NOT trigger re-init when a user runs `squad shell` afterward.
+
+**What happened:**
+- Migrate reinit via `sdkInitSquad()` created `.first-run` marker
+- Shell checks `.first-run` to decide if init UI should show  
+- User sees "Welcome to Squad!" a second time ❌
+
+**What we do now:**
+- Every CLI command that modifies `.squad/` must test the downstream lifecycle impact
+- For migrate: add test that runs `squad shell` (or at least checks shell entry condition) post-migration
+- For any new `--reinit` or `--reset` flag: test that `.first-run`, `.init-prompt`, session markers are in the correct state for the *next* command
+
+**Pattern for new commands:**
+```typescript
+describe('Downstream shell interaction', () => {
+  it('leaves .squad/ in a state that does NOT retrigger init', () => {
+    // Run command that reinits
+    // Verify firstRunGating conditions are false
+    // Verify no leftover init markers exist
+  });
+});
+```
+
+---
+
+### 2. **SQUAD_OWNED vs USER_OWNED Is a Security+Correctness Boundary**
+
+**Gap:** Tests covered individual files in USER_OWNED (team.md, agents/) but didn't test the full set as a category. The list is canonical and easy to get wrong:
+```typescript
+const USER_OWNED = [
+  'team.md', 'agents/', 'identity/', 
+  'config.json',  // <-- This was missed initially
+  'orchestration-log.md', // etc
+];
+```
+
+**What happened:**
+- Migrate wipes SQUAD_OWNED (templates, casting, etc.)
+- Tests verified agents/ survived ✓
+- Tests verified team.md survived ✓
+- Tests did NOT verify config.json survived ❌
+- User lost squad.config.ts-derived config on migrate
+
+**What we do now:**
+- Create a `test/fixtures/full-squad-dir.ts` that populates BOTH USER_OWNED and SQUAD_OWNED
+- Test that after wipe+reinit, USER_OWNED files are **byte-identical** to before
+- Test that SQUAD_OWNED is **recreated fresh** (not preserved)
+- Any new file added to USER_OWNED requires:
+  1. Update migrate.ts constants
+  2. Add to both migrate-command.test.ts and migrate-e2e.test.ts fixture
+  3. Add assertion `expect(fs.readFileSync(...)).toBe(originalContent)`
+
+**For all CLI commands that modify `.squad/`:**
+- Maintain a shared `USER_OWNED_FILES` constant in a util
+- Use it in every test that checks preservation/deletion
+
+---
+
+### 3. **Security Boundaries Need Dedicated Test Category + Fuzzing**
+
+**Gap:** Migrate added `--restore` and `--backup-dir` flags with path containment checks:
+```typescript
+if (!path.resolve(backupRoot).startsWith(path.resolve(cwd))) {
+  error('path must be within the current directory');
+}
+```
+
+Tests for this existed (line 79 in migrate.ts comment), but only at the unit level. No E2E test.
+
+**What happened:**
+- Tests used valid relative/absolute paths within cwd ✓
+- Tests did NOT try:
+   - `--restore ../../../etc/passwd` (outside cwd)
+   - `--restore /tmp/evil` (absolute path outside cwd)
+   - `--restore ~/.squad-backup-evil` (symlink traversal)
+   - `--backup-dir=.` (current dir, ambiguous)
+
+**What we do now:**
+- Every CLI flag that accepts a path gets a dedicated security test block:
+  ```typescript
+  describe('Security: path containment', () => {
+    it('rejects paths outside cwd', () => {
+      expect(() => runMigrate(cwd, { restore: '../../../etc/passwd' }))
+        .toThrow(/must be within/);
+    });
+    it('rejects absolute paths outside cwd', () => {
+      expect(() => runMigrate(cwd, { restore: '/tmp/evil' }))
+        .toThrow(/must be within/);
+    });
+    it('rejects symlinks that escape cwd', () => {
+      // Create a symlink: cwd/.squad-backup-evil -> /tmp
+      // Verify it's rejected
+    });
+  });
+  ```
+- Assign this test writing to Baer (Security) for review before merge
+
+---
+
+## 4 Patterns for New CLI Commands
+
+When adding a new command (e.g., `squad export`, `squad import`), enforce:
+
+| Pattern | Why | Example Test |
+|---------|-----|--------------|
+| **Filesystem State Machine** | Commands have pre/post conditions; tests must verify *both* | Before: `.squad/` is X. Command runs. After: `.squad/` is Y. No in-between corruption. |
+| **Boundary Categorization** | Files are USER_OWNED or SQUAD_OWNED; tests verify the right category is touched | Add to USER_OWNED? Update fixture + add preservation test. Delete? Add deletion test. |
+| **Path Security** | Any `--path`, `--dir`, `--restore` flag must contain-check | `path.resolve(input).startsWith(path.resolve(cwd))` |
+| **Recovery Paths** | If command has `--backup`, test that a partial backup doesn't corrupt on rollback | Only restore if `backupComplete` flag is true |
+| **Downstream Lifecycle** | Commands that modify `.squad/` must test the next shell/init interaction | After migrate: verify `.first-run` doesn't exist (no re-init) |
+
+---
+
+## Update to Hockney's Charter
+
+Add to `.squad/agents/hockney/charter.md` under "What I Own":
+
+> - **Lifecycle contracts:** CLI commands that modify `.squad/` must test their impact on downstream commands (shell init, casting state, etc.)
+> - **Boundary testing:** USER_OWNED vs SQUAD_OWNED file preservation is tested as a category, not piecemeal
+> - **Security test blocks:** Any path-accepting flag triggers a dedicated security category with containment, traversal, and symlink tests
+> - **Recovery tests:** Backup/restore/rollback paths must test partial failure scenarios (e.g., incomplete backup + forced rollback)
+
+---
+
+## Conclusion
+
+**80% coverage is the floor.** But coverage ≠ completeness. Tests must organize around:
+1. **Boundaries** (what changes, what doesn't)
+2. **Contracts** (CLI command → downstream lifecycle)
+3. **Security** (paths, escapes, boundaries)
+4. **Recovery** (partial failure is a feature; test it)
+
+The 5 bugs caught here would have shipped without peer review. Two of them (shell reinit, config.json loss) would hit production users. The migration test gaps are now obvious in hindsight—but only because we wrote 57 tests and forced the team to think hard about what wasn't tested.
+
+Next command: organize tests by these categories from the start.
+
+---
+
+# QA Discipline: Destructive Commands Need Adversarial Testing at Design Time
+
+**Author:** Waingro (Product Dogfooder)  
+**Date:** 2026-03-04  
+**Status:** Proposal (merged by Scribe)  
+**Triggered by:** `squad migrate` post-user-testing bugs
+
+---
+
+## Context
+
+The `squad migrate` command had a pre-PR team review (9 agents) that caught **2/4 critical bugs**. Post-user testing found **2 additional bugs**:
+
+| Bug | Severity | Review | User | Root Cause |
+|-----|----------|--------|------|-----------|
+| `casting/registry.json` wiped, not recreated | P0 | ❌ | ✅ | SDK skips registry.json; logic gap in migrate |
+| `.first-run` marker → re-entry to Init Mode | P1 | ❌ | ✅ | Incomplete marker cleanup |
+| `config.json` destroyed (SQUAD_OWNED not USER_OWNED) | P0 | ✅ | N/A | File ownership violation |
+| `--restore` path traversal (no cwd containment) | P0 | ✅ | N/A | Missing validation |
+
+This reflects a **QA discipline gap**: code review catches logical and security issues, but destructive operations need adversarial testing for state contamination, version compatibility, and edge cases.
+
+---
+
+## Decision
+
+**For any CLI command that deletes, moves, or overwrites files, the implementation must include:**
+
+1. **File Ownership Matrix** (explicit, non-overlapping)
+    - SQUAD_OWNED files (regenerated fresh) vs USER_OWNED files (preserved)
+    - No overlap; documented at code level
+
+2. **Gherkin Scenario Matrix** (written at design time)
+    - File ownership enforcement scenarios
+    - Version-specific regression scenarios (≥2 prior major versions)
+    - State contamination scenarios (.first-run, shell markers)
+    - Dangerous input scenarios (path traversal, symlinks)
+    - Partial failure & rollback scenarios
+    - Idempotence scenarios
+
+3. **Pre-Flight Checklist** (in PR template for destructive commands)
+    - [ ] File ownership matrix explicit & non-overlapping
+    - [ ] Rollback path: error during mutation → restore from backup
+    - [ ] Marker cleanup: .first-run, .init-prompt, shell state removed
+    - [ ] Path validation: containment checks (startsWith cwd)
+    - [ ] Version compat: test ≥2 prior major versions
+    - [ ] Idempotence: safe to run twice
+    - [ ] Dry-run: pixel-perfect, no mutation
+    - [ ] Partial failure: can roll back mid-operation
+    - [ ] User communication: next steps clear
+    - [ ] Adversarial inputs: path traversal, symlinks, collisions
+
+4. **Shell State Tests** (dedicated test category)
+    - Any command touching `.squad/.first-run` or markers
+    - Verify shell would NOT re-enter Init Mode post-migration
+    - Verify markers are not created during reinit
+
+5. **Version-Specific Fixtures** (test against known cohorts)
+    - v0.5.x: no casting/, minimal agents
+    - v0.8.x: casting/ present, full registry
+    - Current: up-to-date schema
+    - Test each variant in isolation
+
+---
+
+## Examples
+
+### Gherkin Scenarios for `squad migrate`
+
+```gherkin
+Scenario: Migrate handles repos with no casting state (v0.5.x)
+  Given a .squad/ from v0.5.x (no casting/ directory)
+  When running 'squad migrate'
+  Then registry.json is created from agents/
+  And casting/policy.json and casting/history.json are initialized
+
+Scenario: Migrate removes init-mode markers
+  Given a migrated repo with agent roster
+  When 'squad migrate' completes
+  Then .squad/.first-run does NOT exist
+  And shell does not re-enter Init Mode
+
+Scenario: --restore rejects path traversal attempts
+  When running 'squad migrate --restore ../../etc/passwd'
+  Then exit code is 1
+  And no files outside cwd are accessed
+```
+
+### Pre-Flight Checklist in PR
+
+When reviewing a destructive command, the reviewer should verify all 10 items before approval. Include this checklist in the PR template.
+
+---
+
+## Impact
+
+- **Code review focus:** syntax, logic, security (what reviewers are good at)
+- **Adversarial QA focus:** state contamination, version compat, edge cases (what QA is good at)
+- **Result:** destructive commands get both disciplines instead of one alone
+
+---
+
+## Implementation
+
+1. Scribe: merge this decision
+2. Keaton/Fenster: update PR template to include destructive command checklist
+3. Waingro: add "destructive command" tag to issue templates
+4. Squad: on next destructive command PR, enforce the checklist

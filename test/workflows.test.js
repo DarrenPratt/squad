@@ -15,6 +15,14 @@ const CI_CD_WORKFLOWS = [
   'squad-release.yml',
 ];
 
+// Squad-framework workflows that ARE installed during init
+const FRAMEWORK_WORKFLOWS = [
+  'squad-heartbeat.yml',
+  'squad-triage.yml',
+  'squad-issue-assign.yml',
+  'sync-squad-labels.yml',
+];
+
 function runSquad(args, cwd) {
   try {
     const result = execFileSync(process.execPath, [CLI, ...args], {
@@ -111,8 +119,8 @@ describe('CI/CD workflow templates (squad-ci, squad-preview, squad-release)', ()
     }
   });
 
-  describe('fresh init copies CI/CD workflows to .github/workflows/', () => {
-    for (const file of CI_CD_WORKFLOWS) {
+  describe('fresh init copies framework workflows to .github/workflows/', () => {
+    for (const file of FRAMEWORK_WORKFLOWS) {
       it(`${file} is present after init`, (t) => {
         if (!fs.existsSync(path.join(TEMPLATES_DIR, file))) {
           t.skip(`${file} template not yet created`);
@@ -121,6 +129,20 @@ describe('CI/CD workflow templates (squad-ci, squad-preview, squad-release)', ()
         initSquad(tmpDir);
         const dest = path.join(tmpDir, '.github', 'workflows', file);
         assert.ok(fs.existsSync(dest), `${file} should exist in .github/workflows/ after init`);
+      });
+    }
+  });
+
+  describe('fresh init does NOT copy CI/CD workflows to .github/workflows/', () => {
+    for (const file of CI_CD_WORKFLOWS) {
+      it(`${file} is absent after init`, (t) => {
+        if (!fs.existsSync(path.join(TEMPLATES_DIR, file))) {
+          t.skip(`${file} template not yet created`);
+          return;
+        }
+        initSquad(tmpDir);
+        const dest = path.join(tmpDir, '.github', 'workflows', file);
+        assert.ok(!fs.existsSync(dest), `${file} should NOT be installed by init`);
       });
     }
   });
@@ -173,7 +195,7 @@ describe('CI/CD workflow templates (squad-ci, squad-preview, squad-release)', ()
   });
 
   describe('workflow YAML validity after init', () => {
-    for (const file of CI_CD_WORKFLOWS) {
+    for (const file of FRAMEWORK_WORKFLOWS) {
       it(`${file} in .github/workflows/ is valid workflow YAML`, (t) => {
         if (!fs.existsSync(path.join(TEMPLATES_DIR, file))) {
           t.skip(`${file} template not yet created`);
@@ -243,16 +265,18 @@ describe('CI/CD workflow templates (squad-ci, squad-preview, squad-release)', ()
     });
   });
 
-  describe('all workflow templates have matching copies after init', () => {
-    it('every .yml in templates/workflows/ is copied to .github/workflows/', () => {
-      const allTemplates = getAllTemplateWorkflows();
-      if (allTemplates.length === 0) {
+  describe('all framework workflow templates have matching copies after init', () => {
+    it('every framework workflow is copied to .github/workflows/', () => {
+      const presentTemplates = FRAMEWORK_WORKFLOWS.filter(f =>
+        fs.existsSync(path.join(TEMPLATES_DIR, f))
+      );
+      if (presentTemplates.length === 0) {
         return; // nothing to test
       }
 
       initSquad(tmpDir);
 
-      for (const file of allTemplates) {
+      for (const file of presentTemplates) {
         const dest = path.join(tmpDir, '.github', 'workflows', file);
         assert.ok(
           fs.existsSync(dest),
