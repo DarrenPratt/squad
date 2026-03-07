@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.21] - 2026-03-11
+## [0.8.22] - 2026-03-11
 
 ### Added — SDK-First Mode (Phase 1)
 - **Builder functions** — Type-safe team configuration with runtime validation

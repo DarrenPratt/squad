@@ -13,7 +13,8 @@
 | Docs & messaging | McManus 📣 | README, API docs, getting-started, demos, tone review |
 | Architecture & review | Keaton 🏗️ | Product direction, architectural decisions, code review, scope/trade-offs |
 | Distribution | Rabin 📦 | npm packaging, esbuild config, global install, marketplace prep |
-| Git & releases | Kobayashi 🚢 | Semantic versioning, GitHub Releases, CI/CD, branch protection |
+| Release management | Trejo 🚢 | Semantic versioning, GitHub Releases, changelogs, dev→main merges, release gating |
+| CI/CD & publish pipeline | Drucker ⚙️ | GitHub Actions, publish.yml, automated validation gates, workflow monitoring |
 | Security & PII | Baer 🔒 | Hook design (file-write guards, PII filters), security review, compliance |
 | Visual identity | Redfoot 🎨 | Logo, icons, brand assets, design system |
 | Aspire & observability | Saul 🔭 | Aspire dashboard, OTLP integration, Playwright E2E, Docker telemetry |

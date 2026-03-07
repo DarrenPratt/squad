@@ -19,7 +19,8 @@
 | McManus | DevRel | `.squad/agents/mcmanus/charter.md` | ✅ Active |
 | Kujan | SDK Expert | `.squad/agents/kujan/charter.md` | ✅ Active |
 | Edie | TypeScript Engineer | `.squad/agents/edie/charter.md` | ✅ Active |
-| Kobayashi | Git & Release | `.squad/agents/kobayashi/charter.md` | ✅ Active |
+| Trejo | Release Manager | `.squad/agents/trejo/charter.md` | ✅ Active |
+| Drucker | CI/CD Engineer | `.squad/agents/drucker/charter.md` | ✅ Active |
 | Fortier | Node.js Runtime | `.squad/agents/fortier/charter.md` | ✅ Active |
 | Rabin | Distribution | `.squad/agents/rabin/charter.md` | ✅ Active |
 | Baer | Security | `.squad/agents/baer/charter.md` | ✅ Active |

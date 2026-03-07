@@ -136,7 +136,7 @@ function discoverHomePage(docsDir) {
 // Discover standalone pages (e.g. whatsnew.md) that aren't in any section
 function discoverStandalonePages(docsDir) {
   const pages = [];
-  const standaloneFiles = ['whatsnew.md'];
+  const standaloneFiles = ['whatsnew.md', 'sdk-first-mode.md'];
   for (const f of standaloneFiles) {
     const filePath = path.join(docsDir, f);
     if (!fs.existsSync(filePath)) continue;

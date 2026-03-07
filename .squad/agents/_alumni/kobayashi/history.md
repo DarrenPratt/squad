@@ -1,5 +1,3 @@
-📌 Team update (2026-03-07T20-04-20Z): GitHub Actions npm publishing automation established. New publish.yml workflow triggers on GitHub Release creation. NPM_TOKEN secret required in repo settings. CI/CD publishing is now authoritative method; local npm publish deprecated. — coordinated by Scribe
-
 📌 Team update (2026-03-07T16:25:00Z): Actions → CLI migration strategy finalized. 4-agent consensus: migrate 5 squad-specific workflows (12 min/mo) to CLI commands. Keep 9 CI/release workflows (215 min/mo, load-bearing). Zero-risk migration. v0.8.22 quick wins identified: squad labels sync + squad labels enforce. Phased rollout: v0.8.22 (deprecation + CLI) → v0.9.0 (remove workflows) → v0.9.x (opt-in automation). Brady's portability insight captured: CLI-first means Squad runs anywhere (containers, Codespaces). Customer communication strategy: "Zero surprise automation" as competitive differentiator. Decisions merged. — coordinated by Scribe
 
 # Project Context
@@ -34,38 +32,6 @@
 
 ## Learnings
 
-### Release v0.8.21 — Dev → Main Merge & NPM Publish Trigger (COMPLETE)
-
-**RELEASE GATE MERGE EXECUTED.** Dev branch merged to main, publish workflow triggered successfully.
-
-#### Execution Summary
-- **Merge strategy:** Local merge (git checkout main && git merge origin/dev) attempted with --no-edit
-- **Conflicts encountered:** 5 files with conflicts during merge (cli-entry.ts, package.json files, test files)
-- **Resolution:** Used `git checkout --theirs` strategy to accept dev branch state for all conflicts
-- **Push success:** Main branch updated successfully (commit 59b0c7a)
-- **Workflow trigger:** `gh workflow run publish.yml --ref main -f version=0.8.21` executed successfully
-- **Post-publish:** Version bumped on dev to 0.8.22-preview.1 across all 3 package.json files (commit 9473fa1)
-
-#### Technical Execution Details
-- **Initial blocker:** Stash required due to uncommitted changes (.squad/agents/rabin/history.md)
-- **Protected branch:** Main branch has force-push protection; rebase strategy aborted after conflicts
-- **Conflict resolution pattern:** Theirs strategy (--theirs) ensured dev state landed cleanly on main
-- **Workflow input requirement:** publish.yml requires `version` input for manual dispatch (not auto-detected)
-- **Workflow verification:** `gh run list --workflow=publish.yml` confirmed workflow started successfully
-
-#### Key Learnings
-1. **Conflict resolution for release merges:** When merging dev → main for release, use `git checkout --theirs` on all conflicts to ensure dev state is authoritative
-2. **Workflow dispatch inputs:** Always check workflow file for required inputs; publish.yml needs explicit version string
-3. **Protected branch constraints:** Rebase strategies fail on force-push-protected branches; use merge + conflict resolution
-4. **Post-release discipline:** Immediately bump dev to next preview version after triggering publish (prevents version collisions)
-5. **Stash management:** Always check for uncommitted changes before release operations; stash + restore after
-
-#### Release Sequence Validation
-✅ Pre-release version: 0.8.21-preview.X
-✅ Publish version: 0.8.21 (tagged, released)
-✅ Post-publish dev bump: 0.8.22-preview.1
-Release versioning sequence followed correctly.
-### Release v0.8.21 — Dev → Main Merge & NPM Publish Trigger (IN PROGRESS — BLOCKED)
 ### Release v0.8.21 — GitHub Release Published, NPM Publish Still Blocked (2026-03-07T20:30:00Z)
 
 **ROOT CAUSE IDENTIFIED & RELEASE PUBLISHED.** GitHub Release was still in DRAFT status - this prevented the `release.published` event from triggering the npm publish workflow. Release is now published, but npm publish still blocked on NPM_TOKEN 2FA requirement.
@@ -351,3 +317,106 @@ Brady requested automated npm publishing instead of manual local publishes. Asse
 
 **Key Learning:** Automated npm publishing reduces human error (version mismatches, forgotten packages, incorrect tag) and provides audit trail via GitHub Actions logs. Provenance attestation strengthens supply chain security.
 
+---
+
+## 📌 INCIDENT REPORT: v0.8.22 Release Failures (2026-03-XX)
+
+**STATUS:** Multiple critical failures. Brady furious. Documented for prevention.
+
+### Failures Committed
+
+**1. Invalid semver — 0.8.21.4 committed to main:**
+- Used 4-part version number (0.8.21.4) instead of 3-part semver (0.8.22)
+- npm does NOT support 4-part versions — it mangled to 0.8.2-1.4
+- Created git tag v0.8.21.4 for invalid version
+- Committed to main branch without validation
+- **ROOT CAUSE:** No semver validation before version changes. Assumed any version format was valid.
+
+**2. Draft release created instead of published:**
+- Created GitHub Release in DRAFT state
+- Draft releases do NOT trigger `release: published` webhook events
+- Publish workflow (`publish.yml`) never fired because trigger condition not met
+- **ROOT CAUSE:** Did not understand GitHub Release draft vs. published semantics. Draft releases are invisible to automation.
+
+**3. NPM_TOKEN type not validated:**
+- Did not verify NPM_TOKEN secret was an automation token before publish attempt
+- Token was a user token with 2FA enabled
+- All publish attempts failed with EOTP error (one-time password required)
+- **ROOT CAUSE:** No pre-publish token verification step. Assumed any NPM_TOKEN would work.
+
+**4. Required multiple corrections from Brady:**
+- Brady had to intervene multiple times to fix invalid state
+- Each correction revealed another unvalidated assumption
+- Release process took hours instead of minutes
+- **ROOT CAUSE:** No pre-flight checklist. Released under pressure without validation.
+
+### Lessons Learned — Hard Rules
+
+**1. Semver is ALWAYS 3-part for npm:**
+- Valid: `X.Y.Z` (e.g., 0.8.22)
+- Valid: `X.Y.Z-prerelease.N` (e.g., 0.8.22-preview.1)
+- **INVALID:** `X.Y.Z.N` (4-part versions) — npm does not support this
+- **Validation:** Use `npm version {version} --no-git-tag-version` to test before committing
+- **Prevention:** Add semver validation to `publish.yml` pre-publish step
+
+**2. GitHub Release draft vs. published:**
+- **DRAFT:** Release exists but is NOT visible. Does NOT trigger `release: published` event.
+- **PUBLISHED:** Release is visible and triggers `release: published` webhook.
+- **Automation requirement:** Workflows using `on: release: published` ONLY fire when release is published, NOT when draft is created.
+- **Prevention:** Use `gh release create --draft=false` or explicitly publish with `gh release edit {tag} --draft=false`
+
+**3. NPM_TOKEN must be automation token:**
+- **User tokens with 2FA:** Cannot be used in CI/CD — require interactive OTP
+- **Automation tokens:** Bypass 2FA for CI/CD use (legacy, still supported)
+- **Granular access tokens:** Modern alternative, no 2FA, scoped permissions
+- **Verification:** Check token type at https://www.npmjs.com/settings/{user}/tokens before configuring CI
+- **Prevention:** Document token type requirements in release runbook
+
+**4. Pre-flight checklist required for all releases:**
+- [ ] Version is valid semver (3-part only)?
+- [ ] Version matches across all package.json files (root, squad-cli, squad-sdk)?
+- [ ] NPM_TOKEN is automation token (not user with 2FA)?
+- [ ] GitHub Release will be published (not draft)?
+- [ ] Workflow trigger conditions will be met?
+- **Prevention:** Add pre-publish validation step to `publish.yml`
+
+### State Corruption
+
+**git state:**
+- Invalid tag v0.8.21.4 created on main branch
+- Invalid version 0.8.21.4 committed to package.json files
+- **Recovery:** Tag and commit must be removed/reverted; correct version committed
+
+**npm state:**
+- No packages published under invalid version (npm rejected 0.8.2-1.4)
+- **Recovery:** No npm cleanup needed
+
+**GitHub state:**
+- Draft release may still exist for v0.8.21.4
+- **Recovery:** Delete draft release if present
+
+### Prevention — New Guardrails
+
+**Proposed in decision:** `.squad/decisions/inbox/kobayashi-release-guardrails.md`
+
+1. **Pre-publish semver validation:**
+   - Add validation step in `publish.yml` that verifies version format before npm publish
+   - Script validates: (1) 3-part format, (2) matches semver spec, (3) not already published
+
+2. **GitHub Release creation verification:**
+   - Enforce `--draft=false` flag in release creation
+   - Add workflow check that verifies release is published before proceeding to npm publish
+
+3. **NPM_TOKEN type verification:**
+   - Document token requirements in README
+   - Add workflow step that tests token validity before publish (dry-run)
+   - Add token type check to pre-publish validation
+
+4. **Release runbook:**
+   - Document complete release process with pre-flight checklist
+   - Include rollback procedures for each failure mode
+   - Store in `.squad/skills/release-process/SKILL.md`
+
+### Accountability
+
+**This was my failure.** I rushed the release, skipped validation, and created invalid state. Brady had to fix my mistakes. These guardrails make this failure mode impossible to repeat.

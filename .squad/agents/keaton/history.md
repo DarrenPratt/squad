@@ -1,3 +1,5 @@
+📌 Team update (2026-03-07T20:50:00Z): v0.8.22 RELEASE DISASTER RETROSPECTIVE COMPLETE. Conducted full post-mortem of release catastrophe (4-part semver mangled to 0.8.2-1.4, draft release never triggered publish, wrong NPM_TOKEN, 6+ hours broken `latest` dist-tag). Root causes identified: no release runbook, no semver validation, no NPM_TOKEN docs, bump-build.mjs ran during release. Created comprehensive release process skill (`.squad/skills/release-process/SKILL.md`) with step-by-step checklist, validation gates, rollback procedures. Updated history with hard lessons. Never again. — retrospective by Keaton
+
 📌 Team update (2026-03-07T16:38:00Z): Actions→CLI RFC filed (#252). Community-facing PRD published with problem statement, tiered model (Tier 1: zero-actions, Tier 2: opt-in, Tier 3: enterprise), phased migration plan (v0.8.22 CLI+deprecation, v0.8.23 cleanup, v0.9.0 remove), backward compatibility, and 7 feedback questions. Decisions merged to decisions.md. — decided by Keaton
 
 📌 Team update (2026-03-07T16:25:00Z): Actions → CLI migration strategy finalized. 4-agent consensus: migrate 5 squad-specific workflows (12 min/mo) to CLI commands. Keep 9 CI/release workflows (215 min/mo, load-bearing). Zero-risk migration. v0.8.22 quick wins identified: squad labels sync + squad labels enforce. Phased rollout: v0.8.22 (deprecation + CLI) → v0.9.0 (remove workflows) → v0.9.x (opt-in automation). Brady's portability insight captured: CLI-first means Squad runs anywhere (containers, Codespaces). Customer communication strategy: "Zero surprise automation" as competitive differentiator. Decisions merged. — coordinated by Scribe
@@ -46,6 +48,35 @@
 - Telemetry in both CLI and agent modes
 
 ## Learnings
+
+## 📌 v0.8.22 Release Disaster — 2026-03-07T20:50:00Z
+
+**THE WORST RELEASE IN SQUAD HISTORY.** Brady was rightfully upset. This was a catastrophe. Full retrospective written with brutal honesty.
+
+**What went wrong:**
+1. **GitHub Release created as DRAFT** — didn't trigger `release: published` event, so publish.yml never ran automatically
+2. **NPM_TOKEN was User token with 2FA** — CI failed 5+ times with EOTP errors (can't provide OTP in automation)
+3. **`bump-build.mjs` ran locally 4 times during debugging** — silently mutated version from 0.8.21 → 0.8.21.4 (4-part version, INVALID semver)
+4. **Kobayashi committed 0.8.21.4 without validation** — 4-part versions are NOT valid semver
+5. **npm MANGLED 0.8.21.4 into 0.8.2-1.4** — parser misinterpreted it as major.minor.patch-prerelease. This went to the registry. `latest` dist-tag pointed to a phantom version for 6+ hours.
+6. **Verify step had no retry logic** — npm propagation delay caused 404s even when publish succeeded
+
+**Root cause:** No release runbook. Agents improvised. Improvisation during releases = disaster.
+
+**Lessons learned (hard):**
+1. **Process documentation prevents disasters.** No release without a runbook = no release. Period.
+2. **Semver validation is mandatory.** 4-part versions (0.8.21.4) look valid to humans but npm mangles them. Must run `require('semver').valid()` before ANY commit.
+3. **Token types matter.** User tokens with 2FA ≠ Automation tokens. This should have been documented on day one.
+4. **Draft releases are a footgun.** The difference between "draft" and "published" is invisible in the UI but breaks automation. Document this.
+5. **Validation gates catch mistakes before they ship.** No more trusting package.json versions. Validate everything.
+6. **Agents need checklists, not autonomy, for critical flows.** Releases are not the place for creativity.
+
+**What we shipped:**
+- Comprehensive retrospective: `.squad/decisions/inbox/keaton-v0822-retrospective.md`
+- Release process skill: `.squad/skills/release-process/SKILL.md` — definitive step-by-step runbook with validation gates, rollback procedures, common failure modes
+- Action items assigned to Keaton (skill doc, bump-build.mjs protection, NPM_TOKEN docs) and Kobayashi (pre-release validation script)
+
+**Never again.** This was bad. We own it. We fixed it. We document it so future teams learn from it.
 
 ## 📌 Community Contributors Documentation — 2026-03-07T20:45:00Z
 

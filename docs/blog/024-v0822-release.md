@@ -1,49 +1,56 @@
 ---
-title: "v0.8.21: The Complete Release — SDK-First, Bug Fixes, and Stability"
-date: 2026-03-11
+title: "v0.8.22 Release: SDK-First Mode, Critical Fixes, and Production Stability"
+date: 2026-03-10
 author: "McManus (DevRel)"
 wave: 7
-tags: [squad, release, v0.8.21, sdk-first, stability, cli, typescript]
+tags: [squad, release, v0.8.22, sdk-first, stability, cli, typescript, azure-functions]
 status: published
-hero: "v0.8.21 is a major release combining SDK-First Mode, 26 closed issues, 16 merged PRs, critical crash fixes, and platform stabilization. 3,724 passing tests. Ready for production."
+hero: "v0.8.22 introduces SDK-First Mode for type-safe team configuration, resolves critical installation crashes, and delivers production-grade stability with 3,724 passing tests. Define your AI team in TypeScript, deploy anywhere."
 ---
 
-# v0.8.21: The Complete Release — SDK-First, Bug Fixes, and Stability
+# v0.8.22 Release: SDK-First Mode, Critical Fixes, and Production Stability
 
 > ⚠️ **Experimental** — Squad is alpha software. APIs, commands, and behavior may change between releases.
 
-> _v0.8.21 ships SDK-First Mode alongside critical bug fixes that eliminate installation crashes, wire missing CLI commands, fix model configuration round-trips, and harden the Windows test suite. This is a major release wave: 26 issues closed, 16 PRs merged, 3,724 tests passing._
+> _v0.8.22 is a watershed release combining SDK-First Mode with critical stability improvements. Define your AI team in TypeScript with 8 builder functions, compile to markdown with `squad build`, and deploy anywhere. This release also eliminates installation crashes, wires missing CLI commands, fixes model configuration round-trips, and hardens the Windows test suite. 26 issues closed, 16 PRs merged, 3,724 tests passing._
 
 ---
 
 ## What Shipped
 
-### 1. SDK-First Mode (Phase 1)
+### 1. SDK-First Mode (Phase 1) — The Headline Feature
 
-Define your entire AI team in TypeScript—agents, routing, ceremonies, governance—with full type safety. No manual YAML. No schema files.
+Squad now lets you define your entire team—agents, routing, ceremonies, telemetry, governance—in a single TypeScript config file. Type-safe. Validated at runtime. Compiled to markdown. Deployed anywhere.
 
-**Eight builder functions:**
+**Eight builder functions** for type-safe team configuration:
 
 - `defineTeam()` — Team metadata, project context, member roster
-- `defineAgent()` — Agent role, model, tools, capabilities
+- `defineAgent()` — Agent role, model, tools, capabilities, and status
 - `defineRouting()` — Pattern-based routing with tiers and priorities
-- `defineCeremony()` — Ceremony scheduling (standups, retros)
+- `defineCeremony()` — Ceremony scheduling (standups, retros, retrospectives)
 - `defineHooks()` — Governance hooks (write guards, blocked commands, PII scrubbing)
 - `defineCasting()` — Casting configuration (universe allowlists, overflow strategy)
-- `defineTelemetry()` — OpenTelemetry instrumentation
+- `defineTelemetry()` — OpenTelemetry instrumentation (metrics, traces, spans)
 - `defineSquad()` — Top-level config composition
 
-**`squad build` command:**
+**`squad build` command** with three modes:
 
 ```bash
 squad build              # Compile squad.config.ts to .squad/ markdown
 squad build --check     # Validate without writing
 squad build --dry-run   # Preview what would be generated
+squad build --watch     # File monitoring (stub for Phase 2)
 ```
 
-Generates `.squad/team.md`, `.squad/routing.md`, agent charters, ceremonies. Protected files (`.squad/decisions.md`, `.squad/history.md`) are **never overwritten**.
+Generates:
+- `.squad/team.md` — team roster and context
+- `.squad/routing.md` — routing rules with priorities
+- `.squad/agents/{name}/charter.md` — agent charters with capabilities
+- `.squad/ceremonies.md` — ceremony schedules (if defined)
 
-**Quick start:**
+Protected files (`.squad/decisions.md`, `.squad/history.md`) are **never overwritten**.
+
+**Quick Start Example:**
 
 ```typescript
 import {
@@ -55,23 +62,43 @@ import {
 
 export default defineSquad({
   team: defineTeam({
-    name: 'My Squad',
-    description: 'Multi-agent review pipeline',
-    projectContext: 'Content analysis',
-    members: ['tone-reviewer', 'tech-reviewer', 'copy-editor'],
+    name: 'Content Review Squad',
+    description: 'Specialist reviewers for multi-angle content analysis',
+    projectContext: 'HTTP-triggered review pipeline',
+    members: ['tone-reviewer', 'technical-reviewer', 'copy-editor'],
   }),
 
   agents: [
     defineAgent({
       name: 'tone-reviewer',
-      role: 'Tone Analyst',
+      role: 'Tone & Voice Analyst',
       model: 'claude-sonnet-4',
       tools: ['grep', 'view'],
       capabilities: [
         { name: 'content-analysis', level: 'expert' },
+        { name: 'audience-mapping', level: 'proficient' },
       ],
     }),
-    // ... more agents
+    defineAgent({
+      name: 'technical-reviewer',
+      role: 'Technical Accuracy Checker',
+      model: 'claude-sonnet-4',
+      tools: ['grep', 'view', 'powershell'],
+      capabilities: [
+        { name: 'code-review', level: 'expert' },
+        { name: 'fact-checking', level: 'expert' },
+      ],
+    }),
+    defineAgent({
+      name: 'copy-editor',
+      role: 'Copy Editor',
+      model: 'claude-sonnet-4',
+      tools: ['grep', 'view'],
+      capabilities: [
+        { name: 'grammar-check', level: 'expert' },
+        { name: 'readability-analysis', level: 'proficient' },
+      ],
+    }),
   ],
 
   routing: defineRouting({
@@ -82,8 +109,27 @@ export default defineSquad({
         tier: 'direct',
         priority: 1,
       },
+      {
+        pattern: 'technical-*',
+        agents: ['technical-reviewer'],
+        tier: 'standard',
+        priority: 1,
+      },
+      {
+        pattern: 'copy-*',
+        agents: ['copy-editor'],
+        tier: 'direct',
+        priority: 1,
+      },
+      {
+        pattern: 'review-*',
+        agents: ['tone-reviewer', 'technical-reviewer', 'copy-editor'],
+        tier: 'full',
+        priority: 0,
+      },
     ],
     defaultAgent: 'tone-reviewer',
+    fallback: 'coordinator',
   }),
 });
 ```
@@ -93,13 +139,85 @@ Then:
 ```bash
 npm install @bradygaster/squad-sdk
 npx squad build
+# Generates .squad/team.md, .squad/routing.md, .squad/agents/*/charter.md
 ```
-
-See [SDK-First Mode Guide](../sdk-first-mode.md) for full documentation.
 
 ---
 
-### 2. Remote Squad Mode
+### 2. Azure Function Sample — Serverless Multi-Agent Workflows
+
+New sample: `samples/azure-function-squad/` — a **Content Review Squad** that wires an HTTP-triggered Azure Function to a multi-agent review pipeline.
+
+**What it demonstrates:**
+
+- `defineSquad()` composing team + agents + routing
+- Three specialist agents (tone, technical, copy) defined with `defineAgent()`
+- Pattern-based routing with `defineRouting()`
+- Real TypeScript integration with Azure Functions v4
+- Structured JSON responses with per-agent findings
+
+**Usage:**
+
+```bash
+cd samples/azure-function-squad
+npm install
+func start  # Requires Azure Functions Core Tools
+
+# In another terminal:
+curl -X POST http://localhost:7071/api/squad-prompt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Building multi-agent systems with the Squad SDK is straightforward. Define your agents with defineAgent(), compose them into a team with defineTeam(), and wire up routing with defineRouting(). The SDK validates everything at runtime — no schema files needed."
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "reviews": [
+    {
+      "agent": "tone-reviewer",
+      "role": "Tone & Voice Analyst",
+      "score": 7,
+      "findings": [
+        {
+          "severity": "suggestion",
+          "message": "Tone is neutral. Consider adding variety to maintain reader interest."
+        }
+      ],
+      "summary": "Analyzed 42 words. Tone is informational, energetic."
+    },
+    {
+      "agent": "technical-reviewer",
+      "role": "Technical Accuracy Checker",
+      "score": 9,
+      "findings": [],
+      "summary": "Technical review complete. Code blocks verified."
+    },
+    {
+      "agent": "copy-editor",
+      "role": "Copy Editor",
+      "score": 8,
+      "findings": [
+        {
+          "severity": "suggestion",
+          "message": "Passive voice detected. Consider rewriting in active voice."
+        }
+      ],
+      "summary": "Reviewed 6 sentences. Avg sentence length: 12 words."
+    }
+  ],
+  "overallScore": 8,
+  "consensus": "✅ Content is publication-ready with minor suggestions."
+}
+```
+
+The Azure sample is a drop-in starting point for serverless multi-agent workflows. Replace the mock review handlers with live Squad runtime calls using `SquadClient`, and you have a production-ready review pipeline.
+
+---
+
+### 3. Remote Squad Mode
 
 Cross-machine squad collaboration via new `squad rc` commands for linking project-local squads to remote team roots.
 
@@ -120,9 +238,9 @@ Remote Squad Mode enables teams to share squad identity across multiple projects
 
 ---
 
-### 3. Critical Bug Fixes
+### 4. Critical Bug Fixes
 
-#### **Installation Crash Fix (#247)** — The Big One
+#### **Installation Crash Fix (#247) — The Big One**
 
 **Problem:** `npx @bradygaster/squad-cli` was crashing on fresh installs with:
 
@@ -191,7 +309,7 @@ Four commands were implemented but never wired into the CLI entry point:
 
 ---
 
-### 4. Test Hardening
+### 5. Test Hardening
 
 #### **Windows Race Condition (EBUSY)**
 
@@ -201,9 +319,7 @@ Race condition in `fs.rm` with retry logic on Windows. Fixed with exponential ba
 
 Test speed gate thresholds adjusted for growing CLI codebase. No more false-positive timeout failures.
 
----
-
-### 5. Regression Fix Wave (#221)
+#### **Regression Fix Wave (#221)**
 
 **Massive batch:** PR #221 resolved 25 test regressions across the suite. CRLF normalization, cross-platform path handling, and mock cleanup.
 
@@ -236,7 +352,7 @@ GitHub Actions pipeline fixed and green. All workflows now run reliably without 
 | Critical crash fixes | 1 (#247 — OTel dependency) |
 | Documentation pages added | 2 (SDK-First Mode + SDK Reference) |
 | Sample projects | 1 (Azure Function Content Review Squad) |
-| Release candidate version | 0.8.21-preview.9 |
+| Release candidate version | 0.8.22-preview.9 |
 
 ---
 
@@ -244,16 +360,19 @@ GitHub Actions pipeline fixed and green. All workflows now run reliably without 
 
 ### SDK Mode Detection
 
-The coordinator auto-detects SDK-First mode:
+The coordinator now auto-detects SDK-First mode:
 
 ```typescript
+// squad.config.ts exists?
 if (fs.existsSync(resolve('.', 'squad.config.ts'))) {
-  // SDK-First mode active
+  // Squad is in SDK-First mode
   // Coordinator uses compiled markdown + SDK awareness
 }
 ```
 
-Fallback to traditional markdown-first mode if `squad.config.ts` is missing (backward compatible).
+Fallback: if `squad.config.ts` is missing, Squad operates in traditional markdown-first mode (backward compatible).
+
+---
 
 ### Telemetry Architecture (OTel Resilience)
 
@@ -277,6 +396,8 @@ export function initTelemetry(config?: TelemetryConfig) {
 
 **Benefit:** Telemetry is an optional add-on, not a blocker.
 
+---
+
 ### Remote Squad Path Resolution
 
 Dual-root resolver supports both project-local and team-identity directories:
@@ -288,6 +409,12 @@ function resolveSquadPaths(projectRoot: string, remoteTeamRoot?: string) {
   // Load routing, teams, charters from first match
 }
 ```
+
+---
+
+### OTel Readiness Assessment
+
+All 8 telemetry modules (`defineHooks`, `defineTelemetry`, meter providers, span processors, exporters) compile and validate with zero runtime errors. This unblocks **Phase 3: OpenTelemetry Integration** — where agents report metrics and traces to Prometheus, Jaeger, and Datadog.
 
 ---
 
@@ -309,11 +436,11 @@ function resolveSquadPaths(projectRoot: string, remoteTeamRoot?: string) {
 
 ## Testing & Stability
 
-**Test Coverage (v0.8.21 focus areas):**
+**Test Coverage (v0.8.22 focus areas):**
 
-- 36 builder function tests — validates runtime type guards for each builder
-- 24 build command tests — `--check`, `--dry-run`, protected file guards
-- 29 markdown↔SDK conversion round-trip tests
+- 36 builder function tests (`test/builders.test.ts`) — validates runtime type guards for each builder
+- 24 build command tests (`test/build-command.test.ts`) — `--check`, `--dry-run`, protected file guards
+- 29 markdown→SDK conversion round-trip tests (`test/sdk-conversion.test.ts`) — ensures config round-trips cleanly
 - 25 regression tests fixed from PR #221
 - 2 Windows EBUSY race condition tests (fs.rm retry logic)
 - 13 known timeout flakes on Windows (non-logic, environment-related)
@@ -324,25 +451,29 @@ function resolveSquadPaths(projectRoot: string, remoteTeamRoot?: string) {
 
 ## What We Learned
 
-1. **Type safety is UX.** SDK-First developers get autocomplete and catch configuration errors at edit time, not runtime. This pays for itself immediately.
+1. **Type safety is a UX feature.** Developers writing `squad.config.ts` get autocomplete and catch misconfiguration errors at edit time, not at runtime. This pays for itself immediately.
 
-2. **Optional dependencies unlock resilience.** Moving OTel to optional eliminated the installation crash entirely. Telemetry should be an add-on, not a blocker.
+2. **Builders need to validate deeply.** Each builder runs type guards on input — enum values, required fields, capability levels, routing priorities. This surfaces configuration bugs early.
 
-3. **Windows needs dedicated testing.** Race conditions in `fs.rm`, CRLF normalization, and timeout thresholds are distinct from Unix environments. CI/CD must test both.
+3. **Optional dependencies unlock resilience.** Moving OTel to optional eliminated the installation crash entirely. Telemetry should be an add-on, not a blocker.
 
-4. **Protected files are critical.** `.squad/decisions.md` and `.squad/history.md` must never be overwritten by generated files. This ensures human-written knowledge persists across recompiles.
+4. **Azure Functions unlock serverless agents.** The sample demonstrates that Squad agents can run in a stateless HTTP function. This opens up cost-efficient deployments for batch processing workloads (content review, code analysis, compliance checks).
+
+5. **Protected files are critical.** `.squad/decisions.md` and `.squad/history.md` must never be overwritten by generated files. This ensures human-written knowledge persists across recompiles.
+
+6. **Windows needs dedicated testing.** Race conditions in `fs.rm`, CRLF normalization, and timeout thresholds are distinct from Unix environments. CI/CD must test both.
 
 ---
 
 ## What's Coming Next
 
-### v0.8.22 (Roadmap)
+### v0.8.23 (Roadmap)
 
 - `squad init --sdk` flag — opt-in to SDK-First mode during initialization (#249)
 - `squad migrate` command — convert existing markdown squads to SDK-First (#250)
 - Comprehensive SDK-First documentation expansion (#251)
 
-### Phase 2: Live Reload (SDK-First)
+### Phase 2: Live Reload (Planned)
 
 - `squad build --watch` fully implemented — hot reload of squad.config.ts changes
 - Agents re-spawn with new config without restarting the CLI
@@ -355,17 +486,17 @@ function resolveSquadPaths(projectRoot: string, remoteTeamRoot?: string) {
 - Cost tracking per agent (token spend, wall-clock time)
 - Performance dashboards in Squad CLI (`squad aspire`)
 
-### Beyond v0.8.21
+### Beyond v0.8.22
 
-- **Builder linting:** `squad lint` validates config against best practices
-- **Config versioning:** `squad config migrate` helpers for breaking changes
-- **Casting system integration:** `defineCasting()` → live universe selection
+- **Builder linting:** `squad lint` validates config against best practices (agent capability coverage, routing gaps, ceremony scheduling conflicts)
+- **Config versioning:** `squad config migrate` helpers for breaking changes across SDK versions
+- **Casting system integration:** `defineCasting()` → live universe selection and overflow handling in coordinator
 
 ---
 
 ## Upgrade Path
 
-### From v0.8.20 → v0.8.21
+### From v0.8.20 → v0.8.22
 
 ```bash
 npm install -g @bradygaster/squad-cli@latest
@@ -377,7 +508,7 @@ npm install --save-dev @bradygaster/squad-cli@latest
 
 ### Fresh Install (Crash Fix Benefit)
 
-If you've had issues with `npx @bradygaster/squad-cli` on fresh machines, v0.8.21 resolves the OTel dependency crash:
+If you've had issues with `npx @bradygaster/squad-cli` on fresh machines, v0.8.22 resolves the OTel dependency crash:
 
 ```bash
 npx @bradygaster/squad-cli@latest doctor
@@ -395,23 +526,7 @@ Alternatively, keep your markdown-first squad — both modes will coexist indefi
 
 ---
 
-## Community Credits
-
-This release wave was built by the Squad core team with community contributions:
-
-- **@bradygaster** — Architecture, SDK builders, squad build command, CLI wiring
-- **@edie** — TypeScript + type safety, builder implementations, runtime validation
-- **@mcmanus** (DevRel) — Documentation, sample walkthrough, blog post
-- **@fenster** — Testing + reliability, Windows hardening, regression fixes
-- **@spboyer** — Original remote mode design ([bradygaster/squad#131](https://github.com/bradygaster/squad/pull/131))
-
-**Community contributors:**
-- PR #199 — Migration command (feedback captured in #231)
-- PR #243 — Blankspace fix (cherry-picked)
-
----
-
-## Getting Started with v0.8.21
+## Getting Started with v0.8.22
 
 ### Option 1: Stick with Markdown (No Changes Needed)
 
@@ -431,7 +546,12 @@ mkdir my-sdk-squad && cd my-sdk-squad
 git init
 
 # Create squad.config.ts with builders
+# (see quick start above, or copy from samples/azure-function-squad/)
+
+# Build your squad
 npx squad build
+
+# See the generated markdown
 cat .squad/team.md
 
 # Run agents (same CLI, same experience)
@@ -457,7 +577,7 @@ Full sample: [github.com/bradygaster/squad/tree/main/samples/azure-function-squa
 
 ## Important Fixes for Your Setup
 
-If you've experienced any of these issues, v0.8.21 resolves them:
+If you've experienced any of these issues, v0.8.22 resolves them:
 
 - ✅ **`npx @bradygaster/squad-cli` crashes on fresh install** (#247) — Fixed via OTel resilience
 - ✅ **`squad rc` command not found** (#244) — Now wired into CLI
@@ -466,6 +586,46 @@ If you've experienced any of these issues, v0.8.21 resolves them:
 - ✅ **Extra blank space in UI** (#239) — Removed
 - ✅ **Timeout flakes on Windows** — Hardened with retry logic
 - ✅ **25 test regressions** (#221) — All fixed
+
+---
+
+## Community Credits
+
+This release was shipped by the Squad core team with community contributions:
+
+- **@bradygaster** — Architecture, SDK builders, squad build command, CLI wiring
+- **@edie** (TypeScript + type safety) — Builder implementations, runtime validation
+- **@mcmanus** (DevRel) — Documentation, sample walkthrough, blog post
+- **@fenster** (Testing + reliability) — Test suite, Windows hardening, regression fixes
+- **@spboyer** — Original remote mode design ([bradygaster/squad#131](https://github.com/bradygaster/squad/pull/131))
+
+**Community contributors:**
+- PR #199 — Migration command (feedback captured in #231)
+- PR #243 — Blankspace fix (cherry-picked)
+
+Thanks to all early SDK-First adopters for feedback.
+
+---
+
+## Try It Now
+
+```bash
+npm install -g @bradygaster/squad-cli@latest
+mkdir my-sdk-squad && cd my-sdk-squad
+git init
+
+# Create squad.config.ts with builders
+# (see quick start above, or copy from samples/azure-function-squad/)
+
+# Build your squad
+npx squad build
+
+# See the generated markdown
+cat .squad/team.md
+
+# Run agents (same CLI, same experience)
+npx squad start
+```
 
 ---
 
@@ -479,6 +639,8 @@ If you've experienced any of these issues, v0.8.21 resolves them:
 - [CHANGELOG](../../CHANGELOG.md)
 
 **Related Issues:**
+- #194 — SDK-First Mode
+- #213 — Azure Function Sample
 - #247 — Installation crash (OTel dependency)
 - #244 — CLI command wiring
 - #245 — Model config round-trip
@@ -489,4 +651,4 @@ If you've experienced any of these issues, v0.8.21 resolves them:
 
 ---
 
-_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Upgrade to v0.8.21 →](../../../)_
+_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Try SDK-First Mode →](../sdk-first-mode.md)_

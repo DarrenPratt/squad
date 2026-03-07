@@ -74,7 +74,7 @@ Squad is built by an AI team where each member owns a domain and ships real work
 | Nate | Accessibility Reviewer | Accessibility audits, inclusive design |
 | Waingro | Product Dogfooder | User feedback, real-world validation |
 
-## v0.8.21 Contributors
+## v0.8.22 Contributors
 
 | Contributor | What They Shipped |
 |-------------|-------------------|
