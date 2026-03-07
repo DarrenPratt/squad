@@ -75,6 +75,8 @@ export interface RunInitOptions {
   prompt?: string;
   /** If true, disable extraction from consult sessions (read-only consultations) */
   extractionDisabled?: boolean;
+  /** If false, skip GitHub workflow installation (default: true) */
+  includeWorkflows?: boolean;
 }
 
 /**
@@ -111,7 +113,7 @@ export async function runInit(dest: string, options: RunInitOptions = {}): Promi
     ],
     configFormat: 'typescript',
     skipExisting: true,
-    includeWorkflows: true,
+    includeWorkflows: options.includeWorkflows !== false,
     includeTemplates: true,
     includeMcpConfig: true,
     projectType: projectType as any,

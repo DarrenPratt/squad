@@ -10,6 +10,27 @@
 
 process.env.NODE_NO_WARNINGS = '1';
 
+// Pre-flight: detect missing node:sqlite before the Copilot SDK tries to use it.
+// The @github/copilot SDK lazily imports node:sqlite for session storage.
+// Node.js <22.5.0 and some 22.x builds don't include the builtin. (#214)
+try {
+  await import('node:sqlite');
+} catch {
+  // Module not available — install a shim so the SDK's lazy require succeeds.
+  // We register a minimal stub that throws a descriptive error only if
+  // DatabaseSync is actually instantiated (it may never be on short sessions).
+  const { register } = await import('node:module');
+  // No shim to register — just surface a clear message at startup so users
+  // know what's happening instead of seeing an opaque stack trace.
+  const nodeVersion = process.versions.node;
+  console.warn(
+    `⚠ node:sqlite is not available in Node.js v${nodeVersion}.\n` +
+    '  The Copilot SDK uses node:sqlite for session storage.\n' +
+    '  Upgrade to Node.js ≥22.5.0 or launch with --experimental-sqlite.\n' +
+    '  Squad will attempt to continue, but session persistence may fail.\n',
+  );
+}
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fatal, SquadError } from './cli/core/errors.js';
@@ -62,6 +83,7 @@ async function main(): Promise<void> {
     console.log(`             Flags: --global (init in personal squad directory)`);
     console.log(`  ${BOLD}init${RESET}       Initialize Squad (skip files that already exist)`);
     console.log(`             Flags: --global (init in personal squad directory)`);
+    console.log(`                    --no-workflows (skip GitHub workflow installation)`);
     console.log(`             Usage: init --mode remote <team-repo-path>`);
     console.log(`             Creates .squad/config.json pointing to an external team root`);
     console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
@@ -109,6 +131,8 @@ async function main(): Promise<void> {
     console.log(`  ${BOLD}build${RESET}      Compile squad.config.ts into .squad/ markdown`);
     console.log(`             Flags: --check (validate only), --dry-run (preview)`);
     console.log(`                    --watch (rebuild on change)`);
+    console.log(`  ${BOLD}aspire${RESET}     Launch .NET Aspire dashboard for observability`);
+    console.log(`             Flags: --docker (force Docker), --port <n> (dashboard port)`);
 
     console.log(`  ${BOLD}help${RESET}       Show this help message`);
     console.log(`\nFlags:`);
@@ -154,7 +178,8 @@ async function main(): Promise<void> {
     }
 
     const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
-    runInit(dest).catch(err => {
+    const noWorkflows = args.includes('--no-workflows');
+    runInit(dest, { includeWorkflows: !noWorkflows }).catch(err => {
       fatal(err.message);
     });
     return;
@@ -324,11 +349,11 @@ async function main(): Promise<void> {
 
   if (cmd === 'nap') {
     const { runNap, formatNapReport } = await import('./cli/core/nap.js');
-    const squadRoot = resolveSquad(process.cwd());
-    if (!squadRoot) {
+    // resolveSquad() returns the .squad/ directory itself — use it directly (#207)
+    const squadDir = resolveSquad(process.cwd());
+    if (!squadDir) {
       fatal('No squad found. Run "squad init" first.');
     }
-    const squadDir = path.join(squadRoot, '.squad');
     const deep = args.includes('--deep');
     const dryRun = args.includes('--dry-run');
     const result = await runNap({ squadDir, deep, dryRun });
@@ -351,6 +376,15 @@ async function main(): Promise<void> {
   if (cmd === 'extract') {
     const { runExtract } = await import('./cli/commands/extract.js');
     await runExtract(process.cwd(), args.slice(1));
+    return;
+  }
+
+  if (cmd === 'aspire') {
+    const { runAspire } = await import('./cli/commands/aspire.js');
+    const useDocker = args.includes('--docker');
+    const portIdx = args.indexOf('--port');
+    const port = (portIdx !== -1 && args[portIdx + 1]) ? parseInt(args[portIdx + 1]!, 10) : undefined;
+    await runAspire({ docker: useDocker, port });
     return;
   }
 

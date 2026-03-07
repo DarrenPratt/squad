@@ -38,4 +38,18 @@ export function writeRemoteConfig(projectDir: string, teamRepoPath: string): voi
     JSON.stringify(config, null, 2) + '\n',
     'utf-8',
   );
+
+  // Ensure .squad/config.json is in .gitignore (machine-local path, never commit)
+  const gitignorePath = path.join(projectDir, '.gitignore');
+  const ignoreEntry = '.squad/config.json';
+  let existingIgnore = '';
+  if (fs.existsSync(gitignorePath)) {
+    existingIgnore = fs.readFileSync(gitignorePath, 'utf-8');
+  }
+  if (!existingIgnore.includes(ignoreEntry)) {
+    const block = (existingIgnore && !existingIgnore.endsWith('\n') ? '\n' : '')
+      + '# Squad: local config (machine-specific paths, never commit)\n'
+      + ignoreEntry + '\n';
+    fs.appendFileSync(gitignorePath, block);
+  }
 }
