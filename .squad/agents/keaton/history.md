@@ -100,3 +100,37 @@
 
 
 📌 Discussions-to-Issues batch (2026-03-07T17:07:51Z): Filed 5 issues from actionable community discussions with follow-up replies. #256 (GitHub App auth), #257 (Coordinator delegation), #258 (Teams MCP docs), #259 (VS Code crash), #260 (GitHub.com-based experience). All with discussion references and proper labels.
+
+## 📌 Community Issue Triage Sweep — 2026-03-07T18:15:00Z
+
+**CLOSED 7 BACKLOG ISSUES.** Executed community-friendly close sweep with personalized messaging. Brady directive: close #205, #184, #157, #156, #148 as addressed-in-spirit (pointing to foundational work underway), #211 and #241 as superseded (redirected to #242 and #208 respectively).
+
+**Closed as addressed-in-spirit:**
+- **#205** (Model config per agent) → Redirected to #223 (model priority); foundations laid in charter system
+- **#184** (Concurrent agent commit collisions) → Addressed by SDK-first coordination improvements; worktree strategy tracked for v0.8.23+
+- **#157** (CFO/accounting role for cost tracking) → Custom roles via charter system (v0.8.23+)
+- **#156** (Learn from external PRs) → Memory/context injection patterns in v0.8.23+ roadmap
+- **#148** (GitHub Agent Workflows integration) → CLI-first direction (vs. workflow-centric); see #252 RFC
+
+**Closed as superseded:**
+- **#211** (Multi-level squad setup: org/repo/personal/local) → Addressed by #242 (charter/SDK design consolidation)
+- **#241** (Dedicated docs squad member) → Addressed by #208 (broader docs/knowledge consolidation)
+
+**Key principle:** These weren't false closes — they represent real community concerns being addressed through architectural decisions (SDK, charter system, CLI-first migration). Community felt acknowledged, roadmap clarity improved, backlog reduced.
+
+## 📌 Community Issue Triage Sweep — 2026-03-07T18:15:00Z
+
+**CLOSED 7 BACKLOG ISSUES.** Brady directive: close #205, #184, #157, #156, #148 as addressed-in-spirit (pointing to foundational work underway), #211 and #241 as superseded (redirected to #242 and #208 respectively).
+
+**Closed as in-progress/addressed:**
+- **#205** (Model config per agent) → Redirected to #223 (model priority); foundations laid in charter system
+- **#184** (Concurrent agent commit collisions) → Addressed by SDK-first coordination improvements; worktree strategy tracked for v0.8.23+
+- **#157** (CFO/accounting role for cost tracking) → Custom roles via charter system (v0.8.23+)
+- **#156** (Learn from external PRs) → Memory/context injection patterns in v0.8.23+ roadmap
+- **#148** (GitHub Agent Workflows integration) → CLI-first direction (vs. workflow-centric); see #252 RFC
+
+**Closed as superseded:**
+- **#211** (Multi-level squad setup: org/repo/personal/local) → Addressed by #242 (charter/SDK design consolidation)
+- **#241** (Dedicated docs squad member) → Addressed by #208 (broader docs/knowledge consolidation)
+
+**Key principle:** These weren't "false closes" — they represent real community concerns that are being addressed through architectural decisions (SDK, charter system, CLI-first migration). Community felt acknowledged, roadmap clarity improved, backlog reduced.
