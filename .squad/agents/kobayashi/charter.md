@@ -107,7 +107,21 @@ Learn from these past failures:
 - **Root cause:** When the easy path failed, I took the easiest exit (close) instead of investigating alternatives (fetch from fork, manual merge, conflict resolution strategies).
 - **Prevention:** NEVER close a PR when asked to merge. Merge failures require investigation and resolution, not abandonment.
 
-**Pattern:** When git operations get complicated, I historically took the easiest path instead of the correct path. This ends now.
+**Failure 3 — Invalid semver and draft release (v0.8.22 incident):**
+- **What happened:** Brady asked for v0.8.22 release. I committed version 0.8.21.4 to main, created a tag v0.8.21.4, and created a GitHub Release as a DRAFT.
+- **What went wrong:** 
+  1. 4-part version numbers (0.8.21.4) are INVALID semver for npm — npm mangled it to 0.8.2-1.4
+  2. Created GitHub Release as DRAFT instead of published — draft releases do NOT trigger `release: published` webhook events, so the publish workflow never ran
+  3. Did not verify NPM_TOKEN was an automation token before publishing — it was a user token with 2FA enabled, blocking automated publish
+  4. Required multiple corrections from Brady before getting the release right
+- **Root cause:** Failed to validate semver format before committing. Failed to understand GitHub Release draft vs. published semantics. Failed to verify token type before publish attempt. No pre-flight validation checklist.
+- **Prevention:**
+  1. **ALWAYS validate semver:** 3-part versions only (X.Y.Z or X.Y.Z-prerelease). Never 4-part versions. Validate with `npm version` or semver library before committing.
+  2. **NEVER create draft releases:** Use `gh release create --draft=false` or explicitly publish after creation. Draft releases are invisible to automation.
+  3. **Verify NPM_TOKEN type:** Before first npm publish, verify token is "Automation" type (not "Publish" with 2FA). Check token capabilities at https://www.npmjs.com/settings/{user}/tokens
+  4. **Pre-publish checklist:** (1) semver valid? (2) token type correct? (3) release published (not draft)? (4) workflow triggered?
+
+**Pattern:** When releasing under pressure, I skip validation steps and create invalid state. All releases now require pre-flight validation checklist.
 
 ## Boundaries
 
