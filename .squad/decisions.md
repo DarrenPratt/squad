@@ -5527,3 +5527,35 @@ squad init --with-actions=heartbeat,triage  # Cherry-pick workflows
 
 
 
+
+
+---
+
+# Decision: Actions → CLI RFC Published
+
+**Date:** 2026-03-07
+**Author:** Keaton (Lead)
+**Status:** Open for feedback
+
+## Decision
+
+Filed [#252](https://github.com/bradygaster/squad/issues/252) as the public RFC for migrating Squad's 5 squad-specific GitHub Actions workflows to CLI commands. This is the community-facing version of the internal strategy decided earlier today.
+
+## Key Points
+
+- **Tiered model is the default path.** `squad init` installs zero workflows (Tier 1). Automation is opt-in via `--with-automation` (Tier 2) or `--with-full-automation` (Tier 3).
+- **9 CI/release workflows stay as Actions.** Only the 5 squad-specific workflows migrate.
+- **v0.8.22 ships the CLI commands + deprecation.** v0.8.23 ships cleanup tools. v0.9.0 removes deprecated workflows.
+- **Community feedback requested** on 7 specific questions before implementation begins.
+
+## Impact on Team
+
+- All squad members should review #252 and be prepared to address community feedback.
+- Implementation work is blocked until the RFC feedback period closes (Brady's call on timing).
+- Fenster and Kobayashi own the CLI implementation once greenlit.
+
+
+
+---
+
+

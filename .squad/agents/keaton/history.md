@@ -1,3 +1,4 @@
+📌 Team update (2026-03-07T16:38:00Z): Actions→CLI RFC filed (#252). Community-facing PRD published with problem statement, tiered model (Tier 1: zero-actions, Tier 2: opt-in, Tier 3: enterprise), phased migration plan (v0.8.22 CLI+deprecation, v0.8.23 cleanup, v0.9.0 remove), backward compatibility, and 7 feedback questions. Decisions merged to decisions.md. — decided by Keaton
 
 📌 Team update (2026-03-07T16:25:00Z): Actions → CLI migration strategy finalized. 4-agent consensus: migrate 5 squad-specific workflows (12 min/mo) to CLI commands. Keep 9 CI/release workflows (215 min/mo, load-bearing). Zero-risk migration. v0.8.22 quick wins identified: squad labels sync + squad labels enforce. Phased rollout: v0.8.22 (deprecation + CLI) → v0.9.0 (remove workflows) → v0.9.x (opt-in automation). Brady's portability insight captured: CLI-first means Squad runs anywhere (containers, Codespaces). Customer communication strategy: "Zero surprise automation" as competitive differentiator. Decisions merged. — coordinated by Scribe
 
@@ -91,5 +92,9 @@
 **Core Principle:** Squad should be a CLI-first tool that users control, not an automation layer that surprises them. Users invoke Squad when they want it — no background automation without explicit opt-in.
 
 **Document:** `.squad/decisions/inbox/keaton-actions-to-cli-strategy.md` — full analysis with tradeoffs, UX design, technical approach, and implementation roadmap.
+
+## 📌 Actions → CLI RFC Filed — 2026-03-07T18:00:00Z
+
+**RFC ISSUE FILED.** Created [#252](https://github.com/bradygaster/squad/issues/252) — comprehensive PRD for migrating Squad automation from GitHub Actions to CLI commands. Community-facing RFC with full problem statement, tiered model (Tier 1: zero-actions default, Tier 2: opt-in, Tier 3: enterprise), migration plan across v0.8.22/v0.8.23/v0.9.0, backward compatibility guarantees, and 7 specific feedback questions. References #248 (triage wiring) and #236 (persistent watch). Labels: `type:rfc`, `priority:p1`. Reflects unanimous team consensus from 4-agent analysis session.
 
 
