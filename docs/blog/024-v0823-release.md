@@ -1,18 +1,18 @@
 ---
-title: "v0.8.22 Release: SDK-First Mode, Critical Fixes, and Production Stability"
+title: "v0.8.23 Release: Node 24+ Compatibility, Squad RC Docs, and Critical Fixes"
 date: 2026-03-10
 author: "McManus (DevRel)"
 wave: 7
-tags: [squad, release, v0.8.22, sdk-first, stability, cli, typescript, azure-functions]
+tags: [squad, release, v0.8.23, node24, sdk-first, stability, cli, typescript, azure-functions]
 status: published
-hero: "v0.8.22 introduces SDK-First Mode for type-safe team configuration, resolves critical installation crashes, and delivers production-grade stability with 3,724 passing tests. Define your AI team in TypeScript, deploy anywhere."
+hero: "v0.8.23 fixes a critical crash when running `squad init` on Node.js 24+ and GitHub Codespaces, delivers comprehensive Squad RC (Remote Control) documentation, and increases test coverage to 3,811 tests. Faster CLI startup for non-session commands."
 ---
 
-# v0.8.22 Release: SDK-First Mode, Critical Fixes, and Production Stability
+# v0.8.23 Release: Node 24+ Compatibility, Squad RC Docs, and Critical Fixes
 
 > ⚠️ **Experimental** — Squad is alpha software. APIs, commands, and behavior may change between releases.
 
-> _v0.8.22 is a watershed release combining SDK-First Mode with critical stability improvements. Define your AI team in TypeScript with 8 builder functions, compile to markdown with `squad build`, and deploy anywhere. This release also eliminates installation crashes, wires missing CLI commands, fixes model configuration round-trips, and hardens the Windows test suite. 26 issues closed, 16 PRs merged, 3,724 tests passing._
+> _v0.8.23 is a critical hotfix addressing a crash when running `squad init` on Node.js 24+ and GitHub Codespaces. It ships comprehensive Squad RC documentation, introduces lazy module loading for faster CLI startup, and includes a postinstall patch for ESM import issues. 2 issues closed, 3 PRs merged, 3,811 tests passing._
 
 ---
 
@@ -445,7 +445,7 @@ All 8 telemetry modules (`defineHooks`, `defineTelemetry`, meter providers, span
 - 2 Windows EBUSY race condition tests (fs.rm retry logic)
 - 13 known timeout flakes on Windows (non-logic, environment-related)
 
-**Total test suite:** 3,724 passing tests (3,740 total, 0 logic failures)
+**Total test suite:** 3,811 passing tests (3,840 total, 0 logic failures)
 
 ---
 
@@ -462,6 +462,28 @@ All 8 telemetry modules (`defineHooks`, `defineTelemetry`, meter providers, span
 5. **Protected files are critical.** `.squad/decisions.md` and `.squad/history.md` must never be overwritten by generated files. This ensures human-written knowledge persists across recompiles.
 
 6. **Windows needs dedicated testing.** Race conditions in `fs.rm`, CRLF normalization, and timeout thresholds are distinct from Unix environments. CI/CD must test both.
+
+---
+
+## Node 24+ Compatibility Fix
+
+v0.8.23 fixes a critical crash when running `squad init` on Node.js 24+ (including GitHub Codespaces):
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'vscode-jsonrpc/node'
+```
+
+The root cause was an upstream ESM import issue in `@github/copilot-sdk`. Squad now uses a two-layer defense:
+- **Lazy imports** — commands like `init`, `build`, `link`, and `migrate` no longer eagerly load copilot-sdk
+- **Postinstall patch** — automatically fixes the broken import at install time
+
+This also means CLI startup is faster for non-session commands.
+
+---
+
+## Squad RC Documentation
+
+Comprehensive documentation for `squad rc` (Remote Control) is now available. The new guide covers ACP passthrough architecture, the 7-layer security model, mobile keyboard shortcuts, and troubleshooting. See [Squad RC](../features/squad-rc.md).
 
 ---
 

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.23] - 2026-03-12
+
+### Fixed — Node 24+ ESM Import Crash
+- **Node 24+ `squad init` crash fix (#XXX)** — v0.8.23 resolves `ERR_MODULE_NOT_FOUND: Cannot find module 'vscode-jsonrpc/node'` crash that occurs on Node.js 24+ and GitHub Codespaces. Root cause: upstream ESM import issue in `@github/copilot-sdk`. Two-layer defense implemented:
+  - **Lazy imports** — Commands `init`, `build`, `link`, `migrate` no longer eagerly load copilot-sdk at startup
+  - **Postinstall patch** — Automatically fixes broken ESM import at install time
+  - Side benefit: Faster CLI startup for non-session commands
+
+### Added — Squad RC Documentation
+- Comprehensive guide for `squad rc` (Remote Control) covering:
+  - ACP (Azure Communication Platform) passthrough architecture
+  - 7-layer security model for session isolation and encryption
+  - Mobile keyboard shortcuts and accessibility features
+  - Troubleshooting guide for common connection issues
+
+### By the Numbers
+- 2 issues closed
+- 3 PRs merged
+- 3,811 tests passing (3,840 total, 0 logic failures)
+- 1 critical crash fix (Node 24+ compatibility)
+
 ## [0.8.22] - 2026-03-11
 
 ### Added — SDK-First Mode (Phase 1)
