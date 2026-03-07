@@ -32,9 +32,9 @@
 
 ## Learnings
 
-### Release v0.8.21 — Dev → Main Merge & NPM Publish Trigger (IN PROGRESS — BLOCKED)
+### Release v0.8.21 — GitHub Release Published, NPM Publish Still Blocked (2026-03-07T20:30:00Z)
 
-**RELEASE GATE MERGE EXECUTED.** Dev branch merged to main successfully. NPM publish workflow blocked on 2FA requirement.
+**ROOT CAUSE IDENTIFIED & RELEASE PUBLISHED.** GitHub Release was still in DRAFT status - this prevented the `release.published` event from triggering the npm publish workflow. Release is now published, but npm publish still blocked on NPM_TOKEN 2FA requirement.
 
 #### Execution Summary
 - **✅ Merge strategy:** Local merge (git checkout main && git merge origin/dev) with conflict resolution
@@ -42,21 +42,30 @@
 - **✅ Push success:** Main branch updated (commit 59b0c7a)
 - **✅ Lock file sync:** Fixed package-lock.json sync issue (commit 543bc1a)
 - **✅ Build script fix:** Added CI env check to skip version bump during publish (commit 344bb2b)
-- **❌ NPM Publish blocked:** Workflow requires 2FA/OTP; NPM_TOKEN needs to be automation token
+- **✅ Tag verified:** v0.8.21 points to bf86a32 on main branch (correct)
+- **✅ Release published:** Changed from draft to published (2026-03-07T20:30:14Z)
+- **✅ Workflow triggered:** publish.yml workflow run #22806664280 triggered by release.published event
+- **❌ NPM Publish blocked:** Workflow requires 2FA/OTP; NPM_TOKEN needs to be automation token (error code EOTP)
 
 #### NPM Publishing Blocker — Action Required
 **CRITICAL:** NPM_TOKEN secret is a user token with 2FA enabled. Automated publishing requires an **automation token** or **granular access token** with 2FA bypass.
 
 **Resolution path:**
-1. Go to https://www.npmjs.com/settings/USER/tokens
+1. Go to https://www.npmjs.com/settings/bradygaster/tokens
 2. Create a new **Automation Token** (classic) or **Granular Access Token** with publish permissions
 3. Update the `NPM_TOKEN` secret in repo settings with the new token
-4. Re-trigger the workflow: `gh workflow run publish.yml --ref main -f version=0.8.21`
+4. Workflow will automatically retry on next push, OR manually trigger: `gh workflow run publish.yml --ref v0.8.21`
 
-**Workflow runs attempted:** 3 (all failed at npm publish step)
-- Run 1: package-lock.json out of sync
-- Run 2: build script incremented version (0.8.21 → 0.8.21.1)
-- Run 3: npm 2FA/OTP required
+**Workflow runs attempted:** 5 (all failed at npm publish step with EOTP error)
+- Run 1-3: Previous attempts with package-lock and version issues (fixed)
+- Run 4-5: Manual dispatch attempts (2FA/OTP required)
+- Run #22806664280: Triggered by release.published event (2FA/OTP required)
+
+**Error message:**
+```
+npm error code EOTP
+npm error This operation requires a one-time password from your authenticator.
+```
 
 #### Post-Publish Prep Complete
 ✅ Version bumped on dev to 0.8.22-preview.1 (commit 9473fa1)
@@ -68,10 +77,13 @@
 4. **Post-release discipline:** Immediately bump dev to next preview version after triggering publish (prevents version collisions)
 5. **CI build scripts:** Disable local dev tooling (version bumps, etc.) in CI with env checks (`process.env.CI === 'true'`)
 6. **NPM automation tokens:** User tokens with 2FA enabled CANNOT be used for CI/CD; must use automation tokens or granular access tokens
+7. **GitHub Release draft status:** Draft releases do NOT trigger `release.published` event - must explicitly publish the release for automation to trigger
 
 #### Release Sequence Validation
 ✅ Pre-release version: 0.8.21-preview.X
 ✅ Publish version: 0.8.21 (tagged, released on GitHub)
+✅ GitHub Release: Published (2026-03-07T20:30:14Z) — was draft, now published
+✅ Publish workflow: Triggered successfully (run #22806664280)
 ⏸️ NPM publish: BLOCKED (awaiting automation token configuration)
 ✅ Post-publish dev bump: 0.8.22-preview.1
 
