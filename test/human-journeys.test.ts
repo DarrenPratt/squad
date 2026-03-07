@@ -98,7 +98,9 @@ describe('Journey 1: I just installed this (squad init)', () => {
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    // Retry removal to handle Windows EBUSY race — the spawned process may
+    // still hold a directory handle briefly after exit.
+    await rm(tempDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 });
   });
 
   it('creates .squad/ directory with expected structure', async () => {
@@ -167,7 +169,7 @@ describe('Journey 2: My first conversation (welcome banner)', () => {
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 });
   });
 
   it('welcome data includes agent roster with names and roles', () => {
@@ -501,7 +503,7 @@ describe('Journey 7: Came back the next day (persistence)', () => {
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 });
   });
 
   it('first-run marker is consumed, so no ceremony on return', () => {
