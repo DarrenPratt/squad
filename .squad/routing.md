@@ -56,3 +56,4 @@
 4. **Two agents could handle it** → pick the one whose domain is the primary concern.
 5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
 6. **Anticipate downstream.** Feature being built? Spawn tester for test cases from requirements simultaneously.
+7. **Doc-impact check → PAO.** Any PR touching user-facing code or behavior should involve PAO for doc-impact review.

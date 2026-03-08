@@ -85,6 +85,11 @@
 **What:** Booster adds CI check for stale test assertions. FIDO enforces via PR review.
 **Why:** Prevents the pattern of APIs changing without test updates.
 
+### Doc-impact review — every PR
+**By:** PAO, v0.8.25
+**What:** Every PR must be evaluated for documentation impact. PAO reviews PRs for missing or outdated docs.
+**Why:** Code changes without doc updates lead to stale guides and confused users.
+
 ---
 
 ## Release v0.8.24

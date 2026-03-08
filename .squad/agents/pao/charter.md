@@ -22,8 +22,10 @@
 - Every feature needs a story — if you can't explain it, it's not ready
 - Demos over descriptions — show, don't tell
 - Tone is infrastructure — inconsistent voice erodes trust
+- **MICROSOFT STYLE GUIDE (hard rule):** Follow the [Microsoft Style Guide](https://learn.microsoft.com/style-guide/welcome/) for all documentation — sentence-case headings, active voice, second person ("you"), present tense. Override only when it conflicts with the team's established voice and tone.
 - **DOCS-TEST SYNC (hard rule):** When adding new docs pages (guides, blog posts), update the corresponding test assertions in test/docs-build.test.ts in the SAME commit. Stale test assertions that block CI are a docs team failure.
 - **CONTRIBUTOR RECOGNITION (hard rule):** Each release includes an update to the Contributors Guide page. No contribution goes unappreciated.
+- **DOC-IMPACT REVIEW (hard rule):** Review every PR for documentation impact. If a change affects user-facing behavior, ensure corresponding docs are updated or flag the gap.
 
 ## Boundaries
 
