@@ -26,12 +26,16 @@ mkdir my-project && cd my-project
 git init
 ```
 
+**✓ Validate:** Run `git status` — you should see "No commits yet".
+
 ### 2. Install Squad
 
 ```bash
 npm install --save-dev @bradygaster/squad-cli
 npx squad init
 ```
+
+**✓ Validate:** Check that `.squad/team.md` was created in your project.
 
 **Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/get-started/migration.md) if upgrading from an older version.
 
@@ -40,6 +44,8 @@ npx squad init
 ```bash
 gh auth login
 ```
+
+**✓ Validate:** Run `gh auth status` — you should see "Logged in to github.com".
 
 ### 4. Open Copilot and go
 
@@ -56,6 +62,8 @@ Then:
 I'm starting a new project. Set up the team.
 Here's what I'm building: a recipe sharing app with React and Node.
 ```
+
+**✓ Validate:** Squad responds with team member proposals. Type `yes` to confirm — they're ready to work.
 
 Squad proposes a team — each member named from a persistent thematic cast. You say **yes**. They're ready.
 
