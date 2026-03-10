@@ -22,8 +22,66 @@ const EXPECTED_GUIDES = ['tips-and-tricks', 'sample-prompts', 'personal-squad'];
 const EXPECTED_REFERENCE = ['cli', 'sdk', 'config'];
 
 const EXPECTED_SCENARIOS = [
-  'issue-driven-dev', 'existing-repo', 'ci-cd-integration', 'solo-dev', 'monorepo', 'team-of-humans',
+  'aspire-dashboard',
+  'ci-cd-integration',
+  'client-compatibility',
   'cross-org-auth',
+  'disaster-recovery',
+  'existing-repo',
+  'issue-driven-dev',
+  'keep-my-squad',
+  'large-codebase',
+  'mid-project',
+  'monorepo',
+  'multi-codespace',
+  'multiple-squads',
+  'new-project',
+  'open-source',
+  'private-repos',
+  'release-process',
+  'scaling-workstreams',
+  'solo-dev',
+  'switching-models',
+  'team-of-humans',
+  'team-portability',
+  'team-state-storage',
+  'troubleshooting',
+  'upgrading',
+];
+
+const EXPECTED_FEATURES = [
+  'ceremonies',
+  'consult-mode',
+  'copilot-coding-agent',
+  'directives',
+  'enterprise-platforms',
+  'export-import',
+  'github-issues',
+  'gitlab-issues',
+  'human-team-members',
+  'issue-templates',
+  'labels',
+  'marketplace',
+  'mcp',
+  'memory',
+  'model-selection',
+  'notifications',
+  'parallel-execution',
+  'plugins',
+  'prd-mode',
+  'project-boards',
+  'ralph',
+  'remote-control',
+  'response-modes',
+  'reviewer-protocol',
+  'routing',
+  'skills',
+  'squad-rc',
+  'streams',
+  'team-setup',
+  'upstream-inheritance',
+  'vscode',
+  'worktrees',
 ];
 
 const EXPECTED_BLOG = [
@@ -175,9 +233,17 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('all expected files produce HTML in docs/dist/', () => {
     if (!requireBuild()) return;
-    for (const { dir, name } of ALL_EXPECTED) {
-      const htmlPath = join(DIST_DIR, dir, `${name}.html`);
-      expect(existsSync(htmlPath), `Missing: ${dir}/${name}.html`).toBe(true);
+    const allExpected = [
+      ...EXPECTED_GET_STARTED.map(n => ({ dir: 'get-started', name: n })),
+      ...EXPECTED_GUIDES.map(n => ({ dir: 'guide', name: n })),
+      ...EXPECTED_REFERENCE.map(n => ({ dir: 'reference', name: n })),
+      ...EXPECTED_SCENARIOS.map(n => ({ dir: 'scenarios', name: n })),
+      ...EXPECTED_FEATURES.map(n => ({ dir: 'features', name: n })),
+      ...EXPECTED_CONCEPTS.map(n => ({ dir: 'concepts', name: n })),
+    ];
+    for (const { dir, name } of allExpected) {
+      const htmlPath = join(DIST_DIR, 'docs', dir, name, 'index.html');
+      expect(existsSync(htmlPath), `Missing: docs/${dir}/${name}/index.html`).toBe(true);
     }
   });
 
