@@ -139,3 +139,32 @@ pm test\: 3768 tests passed (2 pre-existing failures unrelated to changes)
 
 
 📌 Team update (2026-03-07T21:06:29Z): Team restructure — Kobayashi retired, Trejo (Release Manager) + Drucker (CI/CD Engineer) hired. Separation of concerns: Trejo WHAT/WHEN, Drucker HOW. 10 decisions merged. 4-0 REPLACE vote. — Scribe
+
+---
+
+## Community PR Merge Session (2026-03-13)
+
+**Task:** Merge 4 community doc/fix PRs into dev branch in order: #349, #375, #358, #346.
+
+**Challenges encountered:**
+1. **Base branch mismatches:** PRs #375, #358, and #346 were based on `main`, not `dev`. Direct merge blocked by untracked files (docs/ directory).
+2. **Manual application required:** For PRs based on main, applied changes manually to avoid pulling in main's divergent history.
+3. **Large PR #346:** 7 files, 42+/26- lines. Used general-purpose agent to apply all changes systematically.
+
+**Pattern used:**
+- **PR #349 (dev-based):** `gh pr checkout` → `git merge --no-ff FETCH_HEAD` — clean merge
+- **PR #375, #358 (main-based, small):** Manual `edit` tool application + direct commit
+- **PR #346 (main-based, large):** Delegated to general-purpose agent via `task` tool
+
+**Commit messages:** All used `docs:` or `fix(docs):` prefix with PR number, brief description, and dual Co-authored-by trailers (PR author + Copilot).
+
+**Final state:** 4 commits on dev, 11 files changed, 2179+ lines (mostly new docs files that didn't exist in dev but were in main).
+
+## Learnings
+
+- When merging PRs based on different branches, check `git diff dev pr-branch --stat` first to assess divergence. Large file counts indicate the PR branched from older history.
+- For main-based PRs with small diffs, manual application (view diff → edit files → commit) is faster than resolving merge conflicts.
+- For main-based PRs with large diffs (7+ files), delegate to a general-purpose agent with `gh pr diff {number}` as input source — they can systematically apply all changes.
+- PAO charter/history files were in dev but not tracked by git (.squad/ in .gitignore). Required `git add -f` to stage them.
+- FETCH_HEAD works for merging immediately after `gh pr checkout` — no need to track branch names.
+- Community PRs should be reviewed for base branch consistency before merge. PRs targeting main that need to land in dev require extra handling.
