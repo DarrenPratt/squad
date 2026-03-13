@@ -4,6 +4,7 @@
  */
 
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { detectSquadDir } from './detect-squad-dir.js';
 import { success, BOLD, RESET, YELLOW, GREEN, DIM } from './output.js';
 import { fatal } from './errors.js';
@@ -12,6 +13,27 @@ import { getPackageVersion } from './version.js';
 import { initSquad as sdkInitSquad, cleanupOrphanInitPrompt, type InitOptions } from '@bradygaster/squad-sdk';
 
 const CYAN = '\x1b[36m';
+
+/**
+ * Detect if the target directory is inside a parent git repo.
+ * Returns the normalized git root path if a parent repo is detected,
+ * or null if dest IS the git root or no git repo exists.
+ */
+export function detectParentGitRepo(dest: string): string | null {
+  try {
+    const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: dest, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim().replace(/\//g, path.sep);
+    const normalDest = path.resolve(dest);
+    const normalGitRoot = path.resolve(gitRoot);
+    if (normalDest.toLowerCase() !== normalGitRoot.toLowerCase()) {
+      return normalGitRoot;
+    }
+  } catch {
+    // No git available or not in a git repo
+  }
+  return null;
+}
 
 /** True when animations should be suppressed (NO_COLOR, dumb term, non-TTY). */
 export function isInitNoColor(): boolean {
@@ -93,6 +115,36 @@ export async function runInit(dest: string, options: RunInitOptions = {}): Promi
 
   // Detect project type
   const projectType = detectProjectType(dest);
+
+  // ── Parent git repo detection ─────────────────────────────────────
+  // Copilot resolves .github/agents/ relative to the git root.
+  // If CWD is inside a parent git repo, the agent file will be
+  // invisible to copilot because the git root points elsewhere.
+  try {
+    const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: dest, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim().replace(/\//g, path.sep);
+    const normalDest = path.resolve(dest);
+    const normalGitRoot = path.resolve(gitRoot);
+    if (normalDest.toLowerCase() !== normalGitRoot.toLowerCase()) {
+      console.log();
+      console.log(`${YELLOW}${BOLD}⚠  Parent git repo detected${RESET}`);
+      console.log(`${YELLOW}   Git root:  ${normalGitRoot}${RESET}`);
+      console.log(`${YELLOW}   You're in: ${normalDest}${RESET}`);
+      console.log();
+      console.log(`${DIM}Copilot resolves .github/agents/ from the git root, not from here.${RESET}`);
+      console.log(`${DIM}The Squad agent won't be visible to copilot in this folder.${RESET}`);
+      console.log();
+      // Auto-fix: run git init to create a repo boundary here
+      console.log(`${CYAN}${BOLD}→${RESET} Running ${CYAN}git init${RESET} to create a repo boundary...`);
+      execFileSync('git', ['init'], { cwd: dest, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+      console.log(`${GREEN}${BOLD}✓${RESET} Initialized git repo at ${normalDest}`);
+      console.log();
+    }
+  } catch {
+    // No git available or not in a git repo — that's fine, continue normally.
+    // Copilot will fall back to CWD for .github/agents/ discovery.
+  }
 
   // Detect squad directory
   const squadInfo = detectSquadDir(dest);
