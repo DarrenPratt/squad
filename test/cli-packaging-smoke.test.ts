@@ -216,7 +216,6 @@ describe('CLI packaging smoke test', { timeout: 120_000 }, () => {
     'scrub-emails',
     'status',
     'build',
-    'subsquads',
     'start',
     'nap',
     'doctor',
@@ -228,7 +227,6 @@ describe('CLI packaging smoke test', { timeout: 120_000 }, () => {
     'copilot-bridge',
     'init-remote',
     'rc-tunnel',
-    'upstream',
   ];
 
   for (const cmd of COMMANDS) {
@@ -246,13 +244,6 @@ describe('CLI packaging smoke test', { timeout: 120_000 }, () => {
     expectCommandRouted(triageResult);
     // Both should fail in the same way (no .squad/ dir or similar)
     // Just verify they're both routed
-  });
-
-  it('alias "workstreams" routes same as "subsquads"', () => {
-    const workstreamsResult = runCommand(['workstreams']);
-    const subsquadsResult = runCommand(['subsquads']);
-    expectCommandRouted(workstreamsResult);
-    expectCommandRouted(subsquadsResult);
   });
 
   it('alias "remote-control" routes same as "rc"', () => {

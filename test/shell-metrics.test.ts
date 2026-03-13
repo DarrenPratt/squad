@@ -115,6 +115,7 @@ describe('Shell Metrics — Opt-in Gate', () => {
 
   it('enableShellMetrics returns false and creates no instruments when disabled', () => {
     delete process.env['SQUAD_TELEMETRY'];
+    delete process.env['OTEL_EXPORTER_OTLP_ENDPOINT'];
     const result = enableShellMetrics();
     expect(result).toBe(false);
     expect(spyMeter.createCounter).not.toHaveBeenCalled();

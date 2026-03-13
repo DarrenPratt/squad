@@ -84,6 +84,14 @@ const EXPECTED_FEATURES = [
   'worktrees',
 ];
 
+const EXPECTED_CONCEPTS = [
+  'github-workflow',
+  'memory-and-knowledge',
+  'parallel-work',
+  'portability',
+  'your-team',
+];
+
 // Blog posts are discovered dynamically to avoid breaking tests when posts change
 const EXPECTED_BLOG = existsSync(BLOG_CONTENT_DIR)
   ? readdirSync(BLOG_CONTENT_DIR)
@@ -228,6 +236,8 @@ describe('Docs Build Script (Astro)', () => {
       ...EXPECTED_GUIDES.map(n => ({ dir: 'guide', name: n })),
       ...EXPECTED_REFERENCE.map(n => ({ dir: 'reference', name: n })),
       ...EXPECTED_SCENARIOS.map(n => ({ dir: 'scenarios', name: n })),
+      ...EXPECTED_FEATURES.map(n => ({ dir: 'features', name: n })),
+      ...EXPECTED_CONCEPTS.map(n => ({ dir: 'concepts', name: n })),
     ];
     for (const { dir, name } of allExpected) {
       const htmlPath = join(DIST_DIR, 'docs', dir, name, 'index.html');
