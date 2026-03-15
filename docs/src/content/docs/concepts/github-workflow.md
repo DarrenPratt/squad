@@ -175,18 +175,7 @@ Board sync runs on label changes, issue close, PR merge, and a 30-minute schedul
 
 Your squad pings you when they need input, hit an error, or finish work. Squad uses MCP-based notification servers — you bring your own delivery channel.
 
-The flow:
-1. **Skill** (`human-notification`) tells agents when to ping
-2. **Agent** invokes your configured MCP server
-3. **MCP server** (Teams, Discord, iMessage, webhook) delivers the message
-
-| Trigger | Example |
-|---------|---------|
-| Blocked on input | "Keaton needs your decision on the API approach" |
-| Error hit | "McManus got an auth error — needs credentials" |
-| Work complete | "Fenster finished the test suite — 142 tests passing" |
-
-Configure in `.vscode/mcp.json` or `.copilot/mcp-config.json`. See the [MCP setup section in Portability & Extensions](portability.md) for configuration details.
+See the [Notifications Guide](../features/notifications.md) for [platform setup](../features/notifications.md#quick-start-teams-simplest-path) (Teams, Discord, iMessage, webhooks), [trigger configuration](../features/notifications.md#what-triggers-a-notification), and [sample MCP configs](../features/notifications.md#sample-mcp-configs).
 
 ---
 

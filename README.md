@@ -37,7 +37,7 @@ squad init
 
 **✓ Validate:** Check that `.squad/team.md` was created in your project.
 
-**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/get-started/migration.md) if upgrading from an older version.
+**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](https://bradygaster.github.io/squad/docs/get-started/migration/) if upgrading from an older version.
 
 ### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
 
@@ -49,16 +49,13 @@ gh auth login
 
 ### 4. Open Copilot and go
 
-**Recommended:** start Copilot with `--yolo`.
-
 ```
-copilot --yolo
+copilot --agent squad --yolo
 ```
 
-> **Why use `--yolo`?** Squad makes many tool calls in a typical session. Without it, Copilot will prompt you to approve each one.
+> **Why `--yolo`?** Squad makes many tool calls in a typical session. Without it, Copilot will prompt you to approve each one.
 
-**In the GitHub Copilot CLI**, type `/agent` and select **Squad**.
-**In VS Code**, type `/agents` and select **Squad**.
+**In VS Code**, open Copilot Chat and select the **Squad** agent.
 
 Then:
 
@@ -245,7 +242,7 @@ export default defineSquad({
 });
 ```
 
-Run `squad build` to generate all the markdown. See the [SDK-First Mode Guide](docs/sdk-first-mode.md) for full documentation.
+Run `squad build` to generate all the markdown. See the [SDK-First Mode Guide](docs/src/content/docs/sdk-first-mode.md) for full documentation.
 
 ---
 

@@ -35,14 +35,15 @@ Both CLIs read and write the same `.squad/` directory, so state stays synchroniz
 
 ## Supported Platforms
 
-Squad is designed for **GitHub Copilot CLI** and ships with full support. **VS Code is now fully supported with zero code changes** — agents work identically on both platforms.
+Squad works across multiple interfaces — GitHub Copilot CLI, VS Code, Squad CLI, SDK, and the Copilot Coding Agent. Pick the one that fits your workflow:
 
-**Current state:**
-- ✅ **GitHub Copilot CLI** — fully supported. This is the recommended interface for day-to-day work. Uses the stable `task` tool for sub-agent spawning, per-spawn model selection, and background mode.
-- ✅ **VS Code Copilot** — fully supported (v0.4.0+). VS Code uses `runSubagent` for parallel execution and supports full `.ai-team/` read/write. See [Client Compatibility Matrix](scenarios/client-compatibility.md) for details.
-- ❌ **Other platforms** — JetBrains IDEs and other runtimes are untested. GitHub.com web-based Copilot is untested.
+- **GitHub Copilot CLI** — Day-to-day conversational work with your squad (recommended)
+- **VS Code** — Same experience, editor-integrated
+- **Squad CLI** — Setup, diagnostics, monitoring (`squad init`, `squad doctor`, `squad watch`)
+- **SDK** — Build tools on top of Squad
+- **Copilot Coding Agent** — Autonomous issue processing via `@copilot`
 
-For a detailed feature comparison across platforms (model selection, background execution, file access, etc.), see [Client Compatibility Matrix](scenarios/client-compatibility.md).
+Not sure which to use? See [Choose your interface](get-started/choose-your-interface.md) for a complete comparison and decision tree.
 
 ---
 
@@ -198,176 +199,49 @@ Squad answers directly without spawning an agent.
 
 ## Response Modes
 
-Not every request needs the full agent machinery. Squad uses tiered response modes to balance speed and depth:
+Squad automatically picks the right response speed based on your request complexity. Direct answers take seconds, full agent spawns take longer but deliver deeper reasoning and parallel work. You don't control the mode — Squad routes based on what the task needs.
 
-| Mode | Approximate Time | What Happens | When Used |
-|------|-------------------|-------------|-----------|
-| **Direct** | ~2–3s | Coordinator answers from memory/context — no agent spawned | Quick factual questions, status checks |
-| **Lightweight** | ~8–12s | Agent spawned with reduced overhead (no charter/history/decisions reads) | Simple tasks with known inputs |
-| **Standard** | ~25–35s | Full agent spawn with charter, history, and decisions | Most work requests |
-| **Full** | ~40–60s | Multi-agent parallel spawn with design review ceremony | Complex multi-domain tasks |
-
-The coordinator selects the mode automatically. You don't need to specify it. More complex tasks naturally take longer because more agents are working in parallel and reading more context.
+→ [Full guide: Response Modes](features/response-modes.md)
 
 ---
 
 ## Memory System
 
-Squad's memory is layered. Knowledge grows with use.
+Squad's memory is layered — personal agent histories, shared team decisions, and reusable skills. Knowledge compounds over sessions. After a few sessions, agents stop asking questions they've already answered. Mature projects carry full architecture knowledge and decision history.
 
-### Personal memory: `history.md`
-
-Each agent has its own `history.md` in `.ai-team/agents/{name}/`. After every session, agents append what they learned — architecture decisions, conventions, user preferences, key file paths. This file is read only by that agent.
-
-After a few sessions, agents stop asking questions they've already answered.
-
-### Shared memory: `decisions.md`
-
-Team-wide decisions live in `.ai-team/decisions.md`. Every agent reads this before working. Decisions are captured in three ways:
-
-1. **From agent work** — agents write decisions to `.ai-team/decisions/inbox/{name}-{slug}.md`
-2. **From user directives** — when you say "always use..." or "never do..."
-3. **Scribe merges** — the Scribe agent consolidates inbox entries into the canonical file, deduplicates, and propagates updates to affected agents
-
-### Skills: `.ai-team/skills/`
-
-Skill files (`SKILL.md`) encode reusable knowledge. They come in two varieties:
-
-- **Starter skills** — bundled at init (e.g., squad conventions)
-- **Earned skills** — written by agents from real work, with a confidence lifecycle: `low → medium → high`
-
-Agents read relevant skill files before working on a task.
-
-### How memory compounds
-
-| Stage | What agents know |
-|-------|-----------------|
-| 🌱 First session | Project description, tech stack, user name |
-| 🌿 After a few sessions | Conventions, component patterns, API design, test strategies |
-| 🌳 Mature project | Full architecture, tech debt map, regression patterns, performance conventions |
+→ [Full guide: Memory System](features/memory.md)
 
 ---
 
 ## Export and Import
 
-### Export your squad
+Export creates a portable snapshot of your entire team — agents, knowledge, skills. Import brings that snapshot into another repo. Squad handles collision detection and splits imported knowledge into portable learnings and project-specific context automatically.
 
-```bash
-npx github:bradygaster/squad export
-```
-
-Creates `squad-export.json` — a portable snapshot of your entire team: agents, casting state, skills, and accumulated knowledge.
-
-Use this to:
-- Back up your team before major changes
-- Share a trained team with a colleague
-- Move a team to a different repo
-
-### Import a squad
-
-```bash
-npx github:bradygaster/squad import squad-export.json
-```
-
-Imports the snapshot into the current repo. Squad handles collision detection — if agents with the same names already exist, it warns you.
-
-Use `--force` to archive existing agents and replace them:
-
-```bash
-npx github:bradygaster/squad import squad-export.json --force
-```
-
-During import, agent histories are split into **portable knowledge** (general learnings that transfer) and **project-specific learnings** (which stay context-tagged). This means imported agents bring their skills without assuming your project works the same way.
+→ [Full guide: Export and Import](features/export-import.md#export--import)
 
 ---
 
 ## GitHub Issues Mode
 
-Squad integrates with GitHub Issues via the `gh` CLI for issue-driven development.
+Squad integrates with GitHub Issues for issue-driven development. Connect to a repo, view the backlog, assign issues to agents, and Squad handles branch creation, implementation, PR creation, and review feedback. Agents link work to issues automatically.
 
-### Connect to a repository
-
-```
-> Connect to myorg/myrepo
-```
-
-Squad stores the issue source and makes the repository's issues available to the team.
-
-### View the backlog
-
-```
-> Show the backlog
-```
-
-Squad displays open issues in a table format.
-
-### Assign an issue to an agent
-
-```
-> Work on #12
-```
-
-The appropriate agent picks up the issue. What happens next:
-
-1. Agent creates a branch with a descriptive name based on the issue
-2. Agent does the implementation work
-3. Agent opens a PR linked to the issue
-
-### Handle PR review feedback
-
-```
-> There's review feedback on PR #3
-```
-
-The relevant agent reads the review comments and addresses them.
-
-### Merge completed work
-
-```
-> Merge it
-```
-
-The PR is merged and the linked issue is closed.
-
-### Check remaining work
-
-```
-> What's left?
-```
-
-Squad refreshes the backlog and shows remaining open issues.
+→ [Full guide: GitHub Issues Mode](features/github-issues.md#github-issues-mode)
 
 ---
 
 ## PRD Mode
 
-If you have a product requirements document, paste the spec directly:
+Paste your product requirements document directly into Squad. The Lead agent decomposes the spec into discrete work items, assigns them to the right agents, and the team works in parallel. Specs become trackable tasks automatically.
 
-```
-> Here's what we're building:
->
-> [paste your PRD or spec here]
-```
-
-The Lead agent decomposes the spec into discrete work items. These become trackable tasks that Squad distributes across the team. Each work item gets assigned to the agent best suited for it, and the team works them in parallel where possible.
+→ [Full guide: PRD Mode](features/prd-mode.md#prd-mode)
 
 ---
 
 ## Human Team Members
 
-Not every team member needs to be an AI agent. You can add human team members to the roster:
+Not every team member needs to be an AI agent. Add humans to the roster for decisions that require a real person — design sign-off, security review, product approval. Squad pauses when work is routed to a human and reminds you if they haven't responded.
 
-```
-> Add Sarah as a human team member — she handles design reviews
-```
-
-Human team members appear in the roster with a distinct badge. When work is routed to a human:
-
-- **Squad pauses** and tells you a human needs to act
-- **Stale reminders** trigger if the human hasn't responded after a configurable period
-- Humans can serve as **reviewers** in the reviewer protocol
-
-This is useful for teams where certain decisions (design sign-off, security review, product approval) require a real person.
+→ [Full guide: Human Team Members](features/human-team-members.md#human-team-members)
 
 ---
 
@@ -377,54 +251,15 @@ Your squad can notify you when they need input — send instant pings to Teams, 
 
 **Setup is quick:** Configure an MCP notification server (takes 5 minutes), and agents automatically know when to ping you.
 
-See [Notifications Guide](features/notifications.md) for platform-specific setup and examples. For MCP configuration details, see [MCP Setup Guide](features/mcp.md).
+See [Notifications Guide](features/notifications.md#quick-start-teams-simplest-path) for platform-specific setup and examples. For MCP configuration details, see [MCP Setup Guide](features/mcp.md#step-by-step-cli-setup).
 
 ---
 
 ## Ceremonies
 
-Ceremonies are structured team meetings. Squad ships with two default ceremonies:
+Ceremonies are structured team meetings. Squad ships with two default ceremonies — Design Review (triggers before multi-agent work) and Retrospective (triggers after failures). You can trigger ceremonies manually, create custom ones, or disable them. Configuration lives in `.ai-team/ceremonies.md`.
 
-### Design Review (automatic)
-
-**Triggers before** multi-agent tasks involving 2+ agents modifying shared systems. The Lead facilitates, spawning each relevant agent to get their perspective on interfaces, risks, and contracts before work begins.
-
-```
-> Team, rebuild the authentication system
-
-📋 Design Review completed — facilitated by Ripley
-   Decisions: 3 | Action items: 4
-   Agreed on JWT format, session storage strategy, and endpoint contracts
-```
-
-### Retrospective (automatic)
-
-**Triggers after** build failures, test failures, or reviewer rejections. The Lead facilitates a focused root-cause analysis.
-
-```
-📋 Retrospective completed — facilitated by Ripley
-   Decisions: 2 | Action items: 3
-   Root cause: missing null check in API response parser
-```
-
-### Manual ceremonies
-
-You can trigger any ceremony on demand:
-
-```
-> Run a retro
-> Run a design meeting before we start
-```
-
-You can also create, disable, or skip ceremonies:
-
-```
-> Add a ceremony for code reviews
-> Disable retros
-> Skip the design review for this task
-```
-
-Ceremony configuration lives in `.ai-team/ceremonies.md`.
+→ [Full guide: Ceremonies](features/ceremonies.md#ceremonies)
 
 ---
 
@@ -491,14 +326,9 @@ Agents are never deleted. Their charter and history move to `.ai-team/agents/_al
 
 ## Reviewer Protocol
 
-Agents with review authority (typically Tester and Lead) can **reject** work. On rejection:
+Agents with review authority can reject work. On rejection, the original author is locked out and a different agent must handle the revision. This prevents the common failure mode where an agent keeps fixing its own work in circles.
 
-1. The original author is **locked out** — they cannot revise their own rejected work.
-2. A **different agent** must handle the revision.
-3. If the revision is also rejected, the revision author is locked out too, and a third agent must take over.
-4. If all eligible agents are locked out, Squad escalates to you.
-
-This prevents the common failure mode where an agent keeps "fixing" its own work in circles.
+→ [Full guide: Reviewer Protocol](features/reviewer-protocol.md#reviewer-rejection-protocol)
 
 ---
 

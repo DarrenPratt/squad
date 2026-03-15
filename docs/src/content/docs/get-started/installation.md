@@ -100,6 +100,12 @@ The SDK gives you typed configuration, routing, model selection, and the full ag
 
 ---
 
+## Not sure which interface to use?
+
+See [Choose your interface](choose-your-interface.md) for a complete breakdown of GitHub Copilot CLI, VS Code, Squad CLI, SDK, and the Copilot Coding Agent.
+
+---
+
 ### Personal squad (cross-project)
 
 Want the same agents across all your projects?

@@ -236,7 +236,7 @@ MCP (Model Context Protocol) servers extend Squad with external services. Agents
   "mcpServers": {
     "github": {
       "command": "node",
-      "args": ["/path/to/github-mcp.js"],
+      "args": ["/absolute/path/to/github-mcp.js"],
       "env": {
         "GITHUB_TOKEN": "$GITHUB_TOKEN"
       }
