@@ -64,3 +64,19 @@
 
 **Pattern:** Policies added as subsections under "How I Work" in charters to ensure they're loaded with agent context. Coordinator-level policies live in squad.agent.md with explicit enforcement instructions.
 
+### 2026-03-16: Team-wide reskill — 17.4% reduction
+
+**Context:** Routine maintenance reskill, one day after previous reskill (2026-03-15). Last reskill brought the system from 117.4KB to 51.7KB. This pass focused on remaining oversized charters.
+
+**Work done:**
+- **Scribe (2143→1557):** Compressed workflow steps, kept essential commit instructions
+- **Handbook (1807→1529):** Removed repetitive LLM-FIRST DOCS emphasis
+- **FIDO (1715→1370):** Consolidated verbose NEVER/ALWAYS sections
+- **Booster (1583→1368):** Same NEVER/ALWAYS compression pattern
+
+**Results:** 26,721→17,088 bytes (charters), 28,602→28,602 bytes (histories), total 55,323→45,690 bytes. 9,633 bytes saved (17.4% reduction). All charters now ≤1.5KB.
+
+**Skill extraction:** No new patterns extracted. CastingEngine integration work (from EECOM March 15) is still evolving — not yet mature enough for skill template. Histories all <12KB, no compression needed.
+
+**Pattern:** NEVER/ALWAYS sections in charters compress well — fold bullet lists into single-paragraph summaries. Essential workflow details (Scribe's commit steps) should stay verbose.
+

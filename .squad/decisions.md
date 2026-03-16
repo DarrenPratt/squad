@@ -3858,6 +3858,34 @@ I work on runtime, spawning, and coordinator logic. My code runs after Kobayashi
 
 The charter now has three documented failure modes with prevention steps. That's not institutional knowledge — that's a rap sheet. The next release will be v0.8.23 or v0.9.0, and I don't trust that the same pattern won't repeat.
 
+---
+
+## Recent Session Directives (2026-03-16)
+
+### 2026-03-16T04-52-12Z: A2A work is shelved
+
+**By:** bradygaster (via Copilot)  
+**What:** Issues #332–#336 (A2A agent spawning framework) are shelved. Docs/proposals stay in place for community input, but no development work starts until community demand materializes.  
+**Why:** User directive — too risky short-term; let community weigh in before committing team effort.
+
+### 2026-03-16T05-21-02Z: GitHub auth directive
+
+**By:** bradygaster (via Copilot)  
+**What:** Always run `gh auth switch --user bradygaster` before any GitHub operation. Brady has two sessions: personal (bradygaster) and EMU (bradyg_microsoft). EMU account gets "Unauthorized" on the bradygaster/squad repo.  
+**Why:** Prevent GitHub API failures due to wrong account. Verify logged-in user before every gh/GitHub MCP call.
+
+### 2026-03-16T05-31-10Z: Priority shift — #330/#354 release blocker
+
+**By:** bradygaster (via Copilot)  
+**What:** Issues #330 (three-layer tooling awareness) and #354 (skills migration to .copilot/skills/) are now the team's #1 priority. They MUST ship together before the next release. All team efforts focus here.  
+**Why:** User directive: "i really want that work completed before we ship again. i think it's a huge, huge win and shores up some solid ecosystem plays." Unifies local skills, global MCP, and global Copilot skills into one discoverable system.
+
+### 2026-03-16T12-32-43Z: Runtime tooling scope for #330/#354
+
+**By:** Brady (via Copilot)  
+**What:** All MCP tools/servers available in the Copilot CLI session MUST be available to squad agents at runtime. All skills loaded into the session — whether from .copilot/skills/ or via plugins (Azure skills, etc.) — must also be available. The three-layer model must surface everything the parent session has.  
+**Why:** User request — defines full scope of skills migration + tooling awareness work. Not just local skills; entire runtime context (MCP servers, global Copilot skills, plugin-provided skills) must flow through to spawned agents.
+
 The guardrails are written down, sure. But they were also skipped during v0.8.22 when Brady needed results fast. A Git & Release agent who can't be trusted under pressure isn't reliable.
 
 ### The Fresh Start Argument
