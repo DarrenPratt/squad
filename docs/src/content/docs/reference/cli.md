@@ -268,10 +268,11 @@ squad doctor
 This performs a comprehensive diagnostic check of your Squad setup, validating:
 
 - `.squad/` directory structure
-- Required configuration files (team.md, routing.md, etc.)
-- Agent definitions and capabilities
-- File permissions and integrity
-- Integration with GitHub and Copilot
+- `config.json` validity and `teamRoot` configuration (if present)
+- Team root resolution (remote mode)
+- Required files: `team.md`, `routing.md`, `decisions.md`
+- `agents/` directory and agent count
+- `casting/registry.json` integrity
 
 ### Usage Examples
 
@@ -289,14 +290,24 @@ git clone my-project && cd my-project && squad doctor
 ### Example Output
 
 ```
-✓ .squad/ directory exists
-✓ team.md is readable and valid
-✓ 4 agents registered
-⚠ skills/ directory is empty — consider adding documentation
-✓ .gitattributes rules applied
+🩺 Squad Doctor
+═══════════════
+
+Mode: local
+
+✅  .squad/ directory exists — directory present
+✅  team.md found with ## Members header — file present, header found
+✅  routing.md found — file present
+✅  agents/ directory exists — directory present (4 agents)
+✅  casting/registry.json exists — file present, valid JSON
+✅  decisions.md exists — file present
+
+Summary: 6 passed, 0 failed, 0 warnings
 ```
 
-The doctor always exits cleanly (no error code) because it's a diagnostic tool, not a gate. Use it to troubleshoot setup issues, validate team state, or run before opening an issue on GitHub.
+The doctor always exits cleanly (exit code 0) because it's a diagnostic tool, not a gate. Use it to troubleshoot setup issues, validate team state, or run before opening an issue on GitHub.
+
+For a full reference of every check, warning, and fix, see [Troubleshooting: `squad doctor` warnings and failures](../scenarios/troubleshooting.md#squad-doctor-warnings-and-failures).
 
 ### Common Issues
 

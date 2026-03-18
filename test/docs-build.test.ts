@@ -53,6 +53,7 @@ const EXPECTED_FEATURES = [
   'built-in-roles',
   'ceremonies',
   'consult-mode',
+  'context-hygiene',
   'copilot-coding-agent',
   'directives',
   'distributed-mesh',
