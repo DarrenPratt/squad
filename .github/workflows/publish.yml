@@ -126,6 +126,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Guard against file: dependencies
+        run: |
+          SDK_DEP=$(node -p "require('./packages/squad-cli/package.json').dependencies['@bradygaster/squad-sdk']")
+          if [[ "$SDK_DEP" == file:* ]]; then
+            echo "::error::squad-cli has file: dependency on squad-sdk — this breaks global installs"
+            exit 1
+          fi
+          echo "✅ SDK dependency is safe: $SDK_DEP"
+
       - name: Build squad-sdk (required for CLI project references)
         run: npm -w packages/squad-sdk run build
 
