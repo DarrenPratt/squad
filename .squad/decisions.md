@@ -6627,3 +6627,13 @@ These governance additions close the loop between the implementation (CLI + SDK)
 
 
 
+
+---
+
+### User Directive: Teams Messaging Approval
+
+**By:** Brady (via Copilot)  
+**When:** 2026-03-23  
+**What:** Never send Teams messages to anyone unless Brady explicitly asks and reviews the content first.  
+**Why:** User request — Teams messaging requires explicit approval and content review before sending. Prevents automated or unreviewed communications.
+
